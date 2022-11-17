@@ -1,9 +1,11 @@
 api:
   listen: :8080
+scheduler:
+  interval: 60s
 storage:
   kind: postgres
   settings:
-    conn_str: postgres://ninhydrin:ninhydrin@ninhydrin-postgres:5432/ninhydrin?sslmode=disable
+    conn_str: postgres://ninhydrin:ninhydrin@ninhydrin-storage:5432/ninhydrin?sslmode=disable
     conn_max_lifetime: 60s
     max_open_conns: 5
 monitoring:
