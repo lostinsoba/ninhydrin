@@ -3,17 +3,17 @@ services:
   ninhydrin-api:
     image: lostinsoba/ninhydrin:develop
     entrypoint: ./ninhydrin/api
-    links:
-      - ninhydrin-storage
     restart: on-failure
+    networks:
+      - ninhydrin
     ports:
       - "8080:8080"
       - "8081:8081"
   ninhydrin-scheduler:
     image: lostinsoba/ninhydrin:develop
     entrypoint: ./ninhydrin/scheduler
-    links:
-      - ninhydrin-storage
     restart: on-failure
+    networks:
+      - ninhydrin
     ports:
       - "8082:8081"

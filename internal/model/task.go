@@ -2,7 +2,7 @@ package model
 
 const (
 	TaskStatusIdle       TaskStatus = "idle"
-	TaskStatusInProgress TaskStatus = "in progress"
+	TaskStatusInProgress TaskStatus = "in_progress"
 	TaskStatusTimeout    TaskStatus = "timeout"
 	TaskStatusFailed     TaskStatus = "failed"
 	TaskStatusDone       TaskStatus = "done"

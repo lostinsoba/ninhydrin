@@ -10,4 +10,7 @@ develop-images:
 		-f ninhydrin.Dockerfile -t lostinsoba/ninhydrin:${VERSION_DEVELOP} .
 
 develop-compose: develop-images
-	docker-compose -f develop/compose/storage.yml -f develop/compose/ninhydrin.yml up
+	docker-compose \
+		-f develop/compose/network.yml \
+		-f develop/compose/storage.yml \
+		-f develop/compose/ninhydrin.yml up
