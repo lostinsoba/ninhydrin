@@ -16,7 +16,7 @@ const (
 
 type Exporter struct {
 	addr     string
-	registry *Registry
+	registry *registry
 }
 
 func NewExporter(settings map[string]string, labels map[string]string) (*Exporter, error) {
@@ -30,16 +30,16 @@ func NewExporter(settings map[string]string, labels map[string]string) (*Exporte
 	}
 	return &Exporter{
 		addr:     listenStr,
-		registry: NewRegistry(namespaceStr, labels),
+		registry: newRegistry(namespaceStr, labels),
 	}, nil
 }
 
 func (exporter *Exporter) RegisterCounter(name string) func(float64) {
-	return exporter.registry.RegisterCounter(name)
+	return exporter.registry.registerCounter(name)
 }
 
 func (exporter *Exporter) RegisterGauge(name string) func(float64) {
-	return exporter.registry.RegisterGauge(name)
+	return exporter.registry.registerGauge(name)
 }
 
 func (exporter *Exporter) Start() {

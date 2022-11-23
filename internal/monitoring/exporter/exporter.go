@@ -7,8 +7,8 @@ import (
 )
 
 type Exporter interface {
-	RegisterCounter(name string) func(float64)
-	RegisterGauge(name string) func(float64)
+	RegisterCounter(name string) (incr func(float64))
+	RegisterGauge(name string) (set func(float64))
 	Start()
 }
 
