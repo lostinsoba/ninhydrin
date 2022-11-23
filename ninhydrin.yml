@@ -10,4 +10,11 @@ storage:
     max_open_conns: 5
 monitoring:
   logger:
-    level: debug
+    kind: zap
+    settings:
+      level: debug
+  exporter:
+    kind: prometheus
+    settings:
+      namespace: ninhydrin
+      listen: :8081

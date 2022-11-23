@@ -5,10 +5,17 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
+const Kind = "zap"
+
 const logLevelDefault = zapcore.DebugLevel
 
-func NewLogger(level string, labels map[string]string) *zapLogger.SugaredLogger {
-	logLevel, err := zapcore.ParseLevel(level)
+const (
+	settingLevel = "level"
+)
+
+func NewLogger(settings map[string]string, labels map[string]string) *zapLogger.SugaredLogger {
+	levelStr := settings[settingLevel]
+	logLevel, err := zapcore.ParseLevel(levelStr)
 	if err != nil {
 		logLevel = logLevelDefault
 	}

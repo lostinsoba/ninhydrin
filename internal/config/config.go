@@ -43,9 +43,16 @@ type Storage struct {
 }
 
 type Monitoring struct {
-	Logger Logger `yaml:"logger"`
+	Logger   Logger   `yaml:"logger"`
+	Exporter Exporter `yaml:"exporter"`
 }
 
 type Logger struct {
-	Level string `yaml:"level"`
+	Kind     string            `yaml:"kind"`
+	Settings map[string]string `yaml:"settings"`
+}
+
+type Exporter struct {
+	Kind     string            `yaml:"kind"`
+	Settings map[string]string `yaml:"settings"`
 }
