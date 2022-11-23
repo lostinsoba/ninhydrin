@@ -11,6 +11,7 @@ develop-images:
 
 develop-compose: develop-images
 	docker-compose \
+		-f develop/compose/monitoring.yml \
 		-f develop/compose/network.yml \
 		-f develop/compose/storage.yml \
 		-f develop/compose/ninhydrin.yml up

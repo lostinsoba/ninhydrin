@@ -1,0 +1,10 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+scrape_configs:
+  - job_name: ninhydrin-api
+    static_configs:
+      - targets: ['ninhydrin-api:8081']
+  - job_name: ninhydrin-scheduler
+    static_configs:
+      - targets: [ 'ninhydrin-scheduler:8081' ]

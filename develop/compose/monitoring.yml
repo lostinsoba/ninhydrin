@@ -1,0 +1,25 @@
+version: "3"
+services:
+  ninhydrin-monitoring-source:
+    image: prom/prometheus
+    restart: on-failure
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    networks:
+      - ninhydrin
+    ports:
+      - "9090:9090"
+  ninhydrin-monitoring-ui:
+    image: grafana/grafana:8.2.6
+    restart: on-failure
+    environment:
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_PATHS_CONFIG=/etc/grafana/custom.ini
+    volumes:
+      - ./monitoring/grafana/custom.ini:/etc/grafana/custom.ini
+      - ./monitoring/grafana/provisioning/:/etc/grafana/provisioning/
+      - ./monitoring/grafana/dashboard.json:/var/lib/grafana/dashboards/ninhydrin/ninhydrin.json
+    networks:
+      - ninhydrin
+    ports:
+      - "3000:3000"
