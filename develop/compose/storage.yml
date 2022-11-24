@@ -1,0 +1,14 @@
+version: "3"
+services:
+  ninhydrin-storage:
+    image: postgres:15.1-alpine
+    environment:
+      POSTGRES_USER: ninhydrin
+      POSTGRES_PASSWORD: ninhydrin
+      POSTGRES_DB: ninhydrin
+    volumes:
+      - ./storage/postgres.sql:/docker-entrypoint-initdb.d/migration.sql
+    networks:
+      - ninhydrin
+    ports:
+      - "5432:5432"

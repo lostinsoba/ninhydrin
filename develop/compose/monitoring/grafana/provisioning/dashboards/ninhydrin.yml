@@ -1,0 +1,11 @@
+apiVersion: 1
+
+providers:
+  - name: 'Ninhydrin'
+    folder: 'Ninhydrin Develop'
+    type: file
+    disableDeletion: true
+    editable: true
+    updaterIntervalSeconds: 15
+    options:
+      path: /var/lib/grafana/dashboards/ninhydrin

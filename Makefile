@@ -8,3 +8,10 @@ develop-images:
 		--build-arg VERSION=${VERSION_DEVELOP} \
 		--build-arg GIT_COMMIT=${GIT_COMMIT} \
 		-f ninhydrin.Dockerfile -t lostinsoba/ninhydrin:${VERSION_DEVELOP} .
+
+develop-compose: develop-images
+	docker-compose \
+		-f develop/compose/monitoring.yml \
+		-f develop/compose/network.yml \
+		-f develop/compose/storage.yml \
+		-f develop/compose/ninhydrin.yml up

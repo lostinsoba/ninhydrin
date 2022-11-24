@@ -28,7 +28,19 @@ func main() {
 	}
 
 	serviceMonitoring := monitoring.NewMonitoring(name, version, gitCommit)
-	log := serviceMonitoring.NewLogger(cfg.Monitoring.Logger.Level)
+	log := serviceMonitoring.NewLogger(
+		cfg.Monitoring.Logger.Kind,
+		cfg.Monitoring.Logger.Settings,
+	)
+
+	exporter, err := serviceMonitoring.NewExporter(
+		cfg.Monitoring.Exporter.Kind,
+		cfg.Monitoring.Exporter.Settings,
+	)
+	if err != nil {
+		log.Fatalf("failed to initialize exporter: %s", err)
+	}
+	exporter.Start()
 
 	serviceStorage, err := storage.NewStorage(
 		cfg.Storage.Kind,
@@ -41,7 +53,7 @@ func main() {
 	serviceController := controller.New(serviceStorage)
 
 	ctx := context.Background()
-	service := scheduler.NewScheduler(serviceController, cfg.Scheduler.Interval, log)
+	service := scheduler.NewScheduler(serviceController, cfg.Scheduler.Interval, exporter, log)
 	service.Run(ctx)
 
 	done := make(chan os.Signal, 1)

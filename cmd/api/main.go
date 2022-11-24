@@ -27,7 +27,19 @@ func main() {
 	}
 
 	serviceMonitoring := monitoring.NewMonitoring(name, version, gitCommit)
-	log := serviceMonitoring.NewLogger(cfg.Monitoring.Logger.Level)
+	log := serviceMonitoring.NewLogger(
+		cfg.Monitoring.Logger.Kind,
+		cfg.Monitoring.Logger.Settings,
+	)
+
+	exporter, err := serviceMonitoring.NewExporter(
+		cfg.Monitoring.Exporter.Kind,
+		cfg.Monitoring.Exporter.Settings,
+	)
+	if err != nil {
+		log.Fatalf("failed to initialize exporter: %s", err)
+	}
+	exporter.Start()
 
 	serviceStorage, err := storage.NewStorage(
 		cfg.Storage.Kind,

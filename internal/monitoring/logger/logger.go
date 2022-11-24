@@ -16,6 +16,11 @@ type Logger interface {
 	Warn(args ...interface{})
 }
 
-func NewLogger(level string, labels map[string]string) Logger {
-	return zap.NewLogger(level, labels)
+func NewLogger(kind string, settings map[string]string, labels map[string]string) Logger {
+	switch kind {
+	case zap.Kind:
+		return zap.NewLogger(settings, labels)
+	default:
+		return zap.NewLogger(settings, labels)
+	}
 }
