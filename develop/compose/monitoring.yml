@@ -9,6 +9,8 @@ services:
       - ninhydrin
     ports:
       - "9090:9090"
+    logging:
+      driver: none
   ninhydrin-monitoring-ui:
     image: grafana/grafana:8.2.6
     restart: on-failure
@@ -23,3 +25,5 @@ services:
       - ninhydrin
     ports:
       - "3000:3000"
+    logging:
+      driver: none
