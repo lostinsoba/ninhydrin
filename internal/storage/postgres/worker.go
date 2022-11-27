@@ -2,7 +2,6 @@ package postgres
 
 import (
 	"context"
-
 	"github.com/lib/pq"
 
 	"lostinsoba/ninhydrin/internal/model"
@@ -52,4 +51,27 @@ func (s *Storage) ListWorkerTagIDs(ctx context.Context, workerID string) (tagIDs
 	row := s.db.QueryRowContext(ctx, query, workerID)
 	err = row.Scan(pq.Array(&tagIDs))
 	return
+}
+
+func (s *Storage) ListWorkerIDsByTagIDs(ctx context.Context, tagIDs ...string) (workerIDs []string, err error) {
+	var query = `select id from worker where tag_ids = any($1)`
+	rows, err := s.db.QueryContext(ctx, query, pq.Array(tagIDs))
+	if rows != nil {
+		defer rows.Close()
+	}
+	if err != nil {
+		return nil, err
+	}
+	workerIDs = make([]string, 0)
+	for rows.Next() {
+		var (
+			id string
+		)
+		err = rows.Scan(&id)
+		if err != nil {
+			return nil, err
+		}
+		workerIDs = append(workerIDs, id)
+	}
+	return workerIDs, nil
 }

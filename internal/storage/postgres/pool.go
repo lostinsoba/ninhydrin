@@ -50,6 +50,30 @@ func (s *Storage) ListPools(ctx context.Context, tagIDs ...string) (pools []*mod
 	return
 }
 
+func (s *Storage) ListPoolIDsByTagIDs(ctx context.Context, tagIDs ...string) (poolIDs []string, err error) {
+	var query = `select id, description, tag_ids from pool where tag_ids = any($2)`
+	rows, err := s.db.QueryContext(ctx, query, pq.Array(tagIDs))
+	if rows != nil {
+		defer rows.Close()
+	}
+	if err != nil {
+		return
+	}
+
+	poolIDs = make([]string, 0)
+	for rows.Next() {
+		var (
+			id string
+		)
+		err = rows.Scan(&id)
+		if err != nil {
+			return
+		}
+		poolIDs = append(poolIDs, id)
+	}
+	return
+}
+
 func (s *Storage) UpdatePool(ctx context.Context, pool *model.Pool) error {
 	var query = `update pool set description = $1, tag_ids = $2 where id = $3`
 	_, err := s.db.ExecContext(ctx, query, pool.Description, pool.TagIDs, pool.ID)

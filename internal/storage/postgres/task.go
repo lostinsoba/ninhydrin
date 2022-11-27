@@ -120,3 +120,26 @@ func (s *Storage) RefreshTaskStatuses(ctx context.Context) (tasksUpdated int64, 
 	tasksUpdated, err = result.RowsAffected()
 	return
 }
+
+func (s *Storage) ListTaskIDsByPoolIDs(ctx context.Context, poolIDs ...string) (taskIDs []string, err error) {
+	var query = `select id from task where pool_id = any($1)`
+	rows, err := s.db.QueryContext(ctx, query, pq.Array(poolIDs))
+	if rows != nil {
+		defer rows.Close()
+	}
+	if err != nil {
+		return nil, err
+	}
+	taskIDs = make([]string, 0)
+	for rows.Next() {
+		var (
+			id string
+		)
+		err = rows.Scan(&id)
+		if err != nil {
+			return nil, err
+		}
+		taskIDs = append(taskIDs, id)
+	}
+	return taskIDs, nil
+}
