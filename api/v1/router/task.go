@@ -14,7 +14,7 @@ func (r *Router) task(router chi.Router) {
 	router.Get("/", r.listCurrentTasks)
 	router.Post("/", r.registerTask)
 	router.With(middleware.WorkerID).Get("/capture", r.captureTasks)
-	router.With(middleware.TaskID).Put("/{id}/status", r.updateTaskStatus)
+	router.With(middleware.TaskID).Put("/{taskID}/status", r.updateTaskStatus)
 }
 
 func (r *Router) listCurrentTasks(writer http.ResponseWriter, request *http.Request) {
