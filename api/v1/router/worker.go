@@ -12,7 +12,7 @@ import (
 
 func (r *Router) worker(router chi.Router) {
 	router.Get("/", r.listWorkers)
-	router.Post("/register", r.registerWorker)
+	router.Post("/", r.registerWorker)
 	router.With(middleware.WorkerID).Delete("/{workerID}", r.deregisterWorker)
 }
 

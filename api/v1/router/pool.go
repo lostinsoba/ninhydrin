@@ -12,7 +12,7 @@ import (
 
 func (r *Router) pool(router chi.Router) {
 	router.Get("/", r.listPools)
-	router.Post("/register", r.registerPool)
+	router.Post("/", r.registerPool)
 	router.With(middleware.PoolID).Delete("/{poolID}", r.deregisterPool)
 	router.With(middleware.PoolID).Put("/{poolID}", r.updatePool)
 }
