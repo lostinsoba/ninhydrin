@@ -14,6 +14,30 @@ func (s *Storage) RegisterTask(ctx context.Context, task *model.Task) error {
 	return err
 }
 
+func (s *Storage) ReadTask(ctx context.Context, taskID string) (task *model.Task, err error) {
+	var query = `select id, pool_id, timeout, retries_left, status from task where id = $1`
+	var (
+		id          string
+		poolID      string
+		timeout     int64
+		retriesLeft int
+		updatedAt   int64
+		status      string
+	)
+	err = s.db.QueryRowContext(ctx, query, taskID).Scan(&id, &poolID, &timeout, &retriesLeft, &updatedAt, &status)
+	if err != nil {
+		return nil, err
+	}
+	return &model.Task{
+		ID:          id,
+		PoolID:      poolID,
+		Timeout:     timeout,
+		RetriesLeft: retriesLeft,
+		UpdatedAt:   updatedAt,
+		Status:      model.TaskStatus(status),
+	}, nil
+}
+
 func (s *Storage) CaptureTasks(ctx context.Context, poolIDs []string, limit int) (tasks []*model.Task, err error) {
 	var query = `update task set status = $1
 		where id in (
@@ -42,11 +66,10 @@ func (s *Storage) CaptureTasks(ctx context.Context, poolIDs []string, limit int)
 			poolID      string
 			timeout     int64
 			retriesLeft int
-			createdAt   int64
 			updatedAt   int64
 			status      string
 		)
-		err = rows.Scan(&id, &poolID, &timeout, &retriesLeft, &createdAt, &updatedAt, &status)
+		err = rows.Scan(&id, &poolID, &timeout, &retriesLeft, &updatedAt, &status)
 		if err != nil {
 			return
 		}
@@ -89,11 +112,10 @@ func (s *Storage) ListCurrentTasks(ctx context.Context) (tasks []*model.Task, er
 			poolID      string
 			timeout     int64
 			retriesLeft int
-			createdAt   int64
 			updatedAt   int64
 			status      string
 		)
-		err = rows.Scan(&id, &poolID, &timeout, &retriesLeft, &createdAt, &updatedAt, &status)
+		err = rows.Scan(&id, &poolID, &timeout, &retriesLeft, &updatedAt, &status)
 		if err != nil {
 			return
 		}

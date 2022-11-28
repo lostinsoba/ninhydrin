@@ -13,7 +13,11 @@ import (
 func (r *Router) worker(router chi.Router) {
 	router.Get("/", r.listWorkers)
 	router.Post("/", r.registerWorker)
-	router.With(middleware.WorkerID).Delete("/{workerID}", r.deregisterWorker)
+	router.Route("/{workerID}", func(router chi.Router) {
+		router.Use(middleware.WorkerID)
+		router.Get("/", r.readWorker)
+		router.Delete("/", r.deregisterWorker)
+	})
 }
 
 func (r *Router) listWorkers(writer http.ResponseWriter, request *http.Request) {
@@ -44,6 +48,25 @@ func (r *Router) registerWorker(writer http.ResponseWriter, request *http.Reques
 		return
 	}
 	render.Status(request, http.StatusCreated)
+}
+
+func (r *Router) readWorker(writer http.ResponseWriter, request *http.Request) {
+	workerID, err := middleware.GetWorkerID(request)
+	if err != nil {
+		render.Render(writer, request, dto.InvalidRequestError(err))
+		return
+	}
+	worker, err := r.ctrl.ReadWorker(request.Context(), workerID)
+	if err != nil {
+		render.Render(writer, request, dto.InternalServerError(err))
+		return
+	}
+	response := dto.ToWorkerData(worker)
+	err = render.Render(writer, request, response)
+	if err != nil {
+		render.Render(writer, request, dto.InternalServerError(err))
+		return
+	}
 }
 
 func (r *Router) deregisterWorker(writer http.ResponseWriter, request *http.Request) {

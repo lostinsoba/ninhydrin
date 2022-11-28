@@ -10,6 +10,10 @@ func (c *Controller) RegisterTask(ctx context.Context, task *model.Task) error {
 	return c.storage.RegisterTask(ctx, task)
 }
 
+func (c *Controller) ReadTask(ctx context.Context, taskID string) (*model.Task, error) {
+	return c.storage.ReadTask(ctx, taskID)
+}
+
 func (c *Controller) ListCurrentTasks(ctx context.Context) ([]*model.Task, error) {
 	return c.storage.ListCurrentTasks(ctx)
 }

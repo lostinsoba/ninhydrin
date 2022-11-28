@@ -19,6 +19,22 @@ func (s *Storage) DeregisterWorker(ctx context.Context, workerID string) error {
 	return err
 }
 
+func (s *Storage) ReadWorker(ctx context.Context, workerID string) (worker *model.Worker, err error) {
+	var query = `select id, tag_ids from worker where id = $1`
+	var (
+		id     string
+		tagIDs []string
+	)
+	err = s.db.QueryRowContext(ctx, query, workerID).Scan(&id, pq.Array(&tagIDs))
+	if err != nil {
+		return nil, err
+	}
+	return &model.Worker{
+		ID:     id,
+		TagIDs: tagIDs,
+	}, nil
+}
+
 func (s *Storage) ListWorkers(ctx context.Context) (workers []*model.Worker, err error) {
 	var query = `select id, tag_ids from worker`
 	rows, err := s.db.QueryContext(ctx, query)

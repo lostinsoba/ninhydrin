@@ -10,6 +10,10 @@ func (c *Controller) RegisterWorker(ctx context.Context, worker *model.Worker) e
 	return c.storage.RegisterWorker(ctx, worker)
 }
 
+func (c *Controller) ReadWorker(ctx context.Context, workerID string) (*model.Worker, error) {
+	return c.storage.ReadWorker(ctx, workerID)
+}
+
 func (c *Controller) ListWorkers(ctx context.Context) ([]*model.Worker, error) {
 	return c.storage.ListWorkers(ctx)
 }

@@ -14,7 +14,11 @@ func (r *Router) task(router chi.Router) {
 	router.Get("/", r.listCurrentTasks)
 	router.Post("/", r.registerTask)
 	router.With(middleware.WorkerID).Get("/capture", r.captureTasks)
-	router.With(middleware.TaskID).Put("/{taskID}/status", r.updateTaskStatus)
+	router.Route("/{taskID}", func(router chi.Router) {
+		router.Use(middleware.TaskID)
+		router.Get("/", r.readTask)
+		router.Put("/status", r.updateTaskStatus)
+	})
 }
 
 func (r *Router) listCurrentTasks(writer http.ResponseWriter, request *http.Request) {
@@ -63,6 +67,25 @@ func (r *Router) captureTasks(writer http.ResponseWriter, request *http.Request)
 		return
 	}
 	response := dto.ToTaskListData(list)
+	err = render.Render(writer, request, response)
+	if err != nil {
+		render.Render(writer, request, dto.InternalServerError(err))
+		return
+	}
+}
+
+func (r *Router) readTask(writer http.ResponseWriter, request *http.Request) {
+	taskID, err := middleware.GetTaskID(request)
+	if err != nil {
+		render.Render(writer, request, dto.InternalServerError(err))
+		return
+	}
+	task, err := r.ctrl.ReadTask(request.Context(), taskID)
+	if err != nil {
+		render.Render(writer, request, dto.InternalServerError(err))
+		return
+	}
+	response := dto.ToTaskData(task)
 	err = render.Render(writer, request, response)
 	if err != nil {
 		render.Render(writer, request, dto.InternalServerError(err))

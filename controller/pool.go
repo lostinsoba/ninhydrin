@@ -11,6 +11,10 @@ func (c *Controller) RegisterPool(ctx context.Context, pool *model.Pool) error {
 	return c.storage.RegisterPool(ctx, pool)
 }
 
+func (c *Controller) ReadPool(ctx context.Context, poolID string) (*model.Pool, error) {
+	return c.storage.ReadPool(ctx, poolID)
+}
+
 func (c *Controller) ListPools(ctx context.Context) ([]*model.Pool, error) {
 	return c.storage.ListPools(ctx)
 }

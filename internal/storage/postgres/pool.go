@@ -20,6 +20,24 @@ func (s *Storage) DeregisterPool(ctx context.Context, poolID string) error {
 	return err
 }
 
+func (s *Storage) ReadPool(ctx context.Context, poolID string) (pool *model.Pool, err error) {
+	var query = `select id, description, tag_ids from pool where id = $1`
+	var (
+		id          string
+		description string
+		tagIDs      []string
+	)
+	err = s.db.QueryRowContext(ctx, query, poolID).Scan(&id, &description, pq.Array(&tagIDs))
+	if err != nil {
+		return nil, err
+	}
+	return &model.Pool{
+		ID:          id,
+		Description: description,
+		TagIDs:      tagIDs,
+	}, nil
+}
+
 func (s *Storage) ListPools(ctx context.Context, tagIDs ...string) (pools []*model.Pool, err error) {
 	var query = `select id, description, tag_ids from pool where $1 or tag_ids = any($2)`
 	rows, err := s.db.QueryContext(ctx, query, len(tagIDs) == 0, pq.Array(tagIDs))

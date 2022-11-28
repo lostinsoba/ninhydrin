@@ -15,11 +15,13 @@ type Storage interface {
 
 	RegisterPool(ctx context.Context, pool *model.Pool) error
 	DeregisterPool(ctx context.Context, poolID string) error
+	ReadPool(ctx context.Context, poolID string) (pool *model.Pool, err error)
 	ListPools(ctx context.Context, tagIDs ...string) (pools []*model.Pool, err error)
 	ListPoolIDsByTagIDs(ctx context.Context, tagIDs ...string) (poolIDs []string, err error)
 	UpdatePool(ctx context.Context, pool *model.Pool) error
 
 	RegisterTask(ctx context.Context, task *model.Task) error
+	ReadTask(ctx context.Context, taskID string) (task *model.Task, err error)
 	CaptureTasks(ctx context.Context, poolIDs []string, limit int) (tasks []*model.Task, err error)
 	UpdateTaskStatus(ctx context.Context, taskID string, status model.TaskStatus) error
 	ListCurrentTasks(ctx context.Context) (tasks []*model.Task, err error)
@@ -28,6 +30,7 @@ type Storage interface {
 
 	RegisterWorker(ctx context.Context, worker *model.Worker) error
 	DeregisterWorker(ctx context.Context, workerID string) error
+	ReadWorker(ctx context.Context, workerID string) (worker *model.Worker, err error)
 	ListWorkers(ctx context.Context) (workers []*model.Worker, err error)
 	ListWorkerTagIDs(ctx context.Context, workerID string) (tagIDs []string, err error)
 	ListWorkerIDsByTagIDs(ctx context.Context, tagIDs ...string) (workerIDs []string, err error)
