@@ -23,13 +23,15 @@ func (c *Controller) CaptureTasks(ctx context.Context, workerID string, limit in
 	if err != nil {
 		return nil, err
 	}
-	pools, err := c.storage.ListPools(ctx, tagIDs...)
+	if len(tagIDs) == 0 {
+		return nil, nil
+	}
+	poolIDs, err := c.storage.ListPoolIDs(ctx, tagIDs...)
 	if err != nil {
 		return nil, err
 	}
-	poolIDs := make([]string, 0, len(pools))
-	for _, pool := range pools {
-		poolIDs = append(poolIDs, pool.ID)
+	if len(poolIDs) == 0 {
+		return nil, nil
 	}
 	return c.storage.CaptureTasks(ctx, poolIDs, limit)
 }

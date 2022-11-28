@@ -35,43 +35,9 @@ func (s *Storage) ReadWorker(ctx context.Context, workerID string) (worker *mode
 	}, nil
 }
 
-func (s *Storage) ListWorkers(ctx context.Context) (workers []*model.Worker, err error) {
-	var query = `select id, tag_ids from worker`
-	rows, err := s.db.QueryContext(ctx, query)
-	if rows != nil {
-		defer rows.Close()
-	}
-	if err != nil {
-		return nil, err
-	}
-	workers = make([]*model.Worker, 0)
-	for rows.Next() {
-		var (
-			id     string
-			tagIDs []string
-		)
-		err = rows.Scan(&id, pq.Array(&tagIDs))
-		if err != nil {
-			return nil, err
-		}
-		workers = append(workers, &model.Worker{
-			ID:     id,
-			TagIDs: tagIDs,
-		})
-	}
-	return workers, nil
-}
-
-func (s *Storage) ListWorkerTagIDs(ctx context.Context, workerID string) (tagIDs []string, err error) {
-	var query = `select tag_ids from worker where id = $1`
-	row := s.db.QueryRowContext(ctx, query, workerID)
-	err = row.Scan(pq.Array(&tagIDs))
-	return
-}
-
-func (s *Storage) ListWorkerIDsByTagIDs(ctx context.Context, tagIDs ...string) (workerIDs []string, err error) {
-	var query = `select id from worker where tag_ids = any($1)`
-	rows, err := s.db.QueryContext(ctx, query, pq.Array(tagIDs))
+func (s *Storage) ListWorkerIDs(ctx context.Context, tagIDs ...string) (workerIDs []string, err error) {
+	var query = `select id from worker where $1 or tag_ids = any($2)`
+	rows, err := s.db.QueryContext(ctx, query, len(tagIDs) == 0, pq.Array(tagIDs))
 	if rows != nil {
 		defer rows.Close()
 	}
@@ -90,4 +56,11 @@ func (s *Storage) ListWorkerIDsByTagIDs(ctx context.Context, tagIDs ...string) (
 		workerIDs = append(workerIDs, id)
 	}
 	return workerIDs, nil
+}
+
+func (s *Storage) ListWorkerTagIDs(ctx context.Context, workerID string) (tagIDs []string, err error) {
+	var query = `select tag_ids from worker where id = $1`
+	row := s.db.QueryRowContext(ctx, query, workerID)
+	err = row.Scan(pq.Array(&tagIDs))
+	return
 }

@@ -11,13 +11,13 @@ import (
 )
 
 func (r *Router) tag(router chi.Router) {
-	router.Get("/", r.listTags)
+	router.Get("/", r.listTagsIDs)
 	router.Post("/", r.registerTag)
 	router.With(middleware.TagID).Delete("/{tagID}", r.deregisterTag)
 }
 
-func (r *Router) listTags(writer http.ResponseWriter, request *http.Request) {
-	list, err := r.ctrl.ListTags(request.Context())
+func (r *Router) listTagsIDs(writer http.ResponseWriter, request *http.Request) {
+	list, err := r.ctrl.ListTagIDs(request.Context())
 	if err != nil {
 		render.Render(writer, request, dto.InternalServerError(err))
 		return

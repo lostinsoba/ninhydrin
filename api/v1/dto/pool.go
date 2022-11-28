@@ -49,16 +49,12 @@ func ToPoolData(pool *model.Pool) *PoolData {
 	}
 }
 
-func ToPoolListData(pools []*model.Pool) *PoolListData {
-	list := make([]*PoolData, 0, len(pools))
-	for _, pool := range pools {
-		list = append(list, ToPoolData(pool))
-	}
-	return &PoolListData{List: list}
+func ToPoolListData(pools []string) *PoolListData {
+	return &PoolListData{List: pools}
 }
 
 type PoolListData struct {
-	List []*PoolData `json:"list"`
+	List []string `json:"list"`
 }
 
 func (*PoolListData) Render(w http.ResponseWriter, r *http.Request) error {

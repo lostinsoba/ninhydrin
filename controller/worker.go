@@ -14,8 +14,8 @@ func (c *Controller) ReadWorker(ctx context.Context, workerID string) (*model.Wo
 	return c.storage.ReadWorker(ctx, workerID)
 }
 
-func (c *Controller) ListWorkers(ctx context.Context) ([]*model.Worker, error) {
-	return c.storage.ListWorkers(ctx)
+func (c *Controller) ListWorkerIDs(ctx context.Context) ([]string, error) {
+	return c.storage.ListWorkerIDs(ctx)
 }
 
 func (c *Controller) DeregisterWorker(ctx context.Context, workerID string) error {

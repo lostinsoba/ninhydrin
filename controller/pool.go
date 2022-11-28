@@ -15,8 +15,8 @@ func (c *Controller) ReadPool(ctx context.Context, poolID string) (*model.Pool, 
 	return c.storage.ReadPool(ctx, poolID)
 }
 
-func (c *Controller) ListPools(ctx context.Context) ([]*model.Pool, error) {
-	return c.storage.ListPools(ctx)
+func (c *Controller) ListPoolIDs(ctx context.Context) ([]string, error) {
+	return c.storage.ListPoolIDs(ctx)
 }
 
 func (c *Controller) DeregisterPool(ctx context.Context, poolID string) error {
@@ -35,7 +35,7 @@ func (c *Controller) UpdatePool(ctx context.Context, pool *model.Pool) error {
 }
 
 func (c *Controller) isPoolInUse(ctx context.Context, poolID string) (bool, error) {
-	taskIDs, err := c.storage.ListTaskIDsByPoolIDs(ctx, poolID)
+	taskIDs, err := c.storage.ListTaskIDs(ctx, poolID)
 	if err != nil {
 		return false, err
 	}

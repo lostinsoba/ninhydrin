@@ -11,7 +11,7 @@ import (
 )
 
 func (r *Router) pool(router chi.Router) {
-	router.Get("/", r.listPools)
+	router.Get("/", r.listPoolIDs)
 	router.Post("/", r.registerPool)
 	router.Route("/{poolID}", func(router chi.Router) {
 		router.Use(middleware.PoolID)
@@ -21,8 +21,8 @@ func (r *Router) pool(router chi.Router) {
 	})
 }
 
-func (r *Router) listPools(writer http.ResponseWriter, request *http.Request) {
-	list, err := r.ctrl.ListPools(request.Context())
+func (r *Router) listPoolIDs(writer http.ResponseWriter, request *http.Request) {
+	list, err := r.ctrl.ListPoolIDs(request.Context())
 	if err != nil {
 		render.Render(writer, request, dto.InternalServerError(err))
 		return

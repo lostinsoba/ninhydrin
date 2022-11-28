@@ -38,39 +38,9 @@ func (s *Storage) ReadPool(ctx context.Context, poolID string) (pool *model.Pool
 	}, nil
 }
 
-func (s *Storage) ListPools(ctx context.Context, tagIDs ...string) (pools []*model.Pool, err error) {
-	var query = `select id, description, tag_ids from pool where $1 or tag_ids = any($2)`
+func (s *Storage) ListPoolIDs(ctx context.Context, tagIDs ...string) (poolIDs []string, err error) {
+	var query = `select id from pool where $1 or tag_ids = any($2)`
 	rows, err := s.db.QueryContext(ctx, query, len(tagIDs) == 0, pq.Array(tagIDs))
-	if rows != nil {
-		defer rows.Close()
-	}
-	if err != nil {
-		return
-	}
-
-	pools = make([]*model.Pool, 0)
-	for rows.Next() {
-		var (
-			id          string
-			description string
-			tagIDs      []string
-		)
-		err = rows.Scan(&id, &description, pq.Array(&tagIDs))
-		if err != nil {
-			return
-		}
-		pools = append(pools, &model.Pool{
-			ID:          id,
-			Description: description,
-			TagIDs:      tagIDs,
-		})
-	}
-	return
-}
-
-func (s *Storage) ListPoolIDsByTagIDs(ctx context.Context, tagIDs ...string) (poolIDs []string, err error) {
-	var query = `select id, description, tag_ids from pool where tag_ids = any($2)`
-	rows, err := s.db.QueryContext(ctx, query, pq.Array(tagIDs))
 	if rows != nil {
 		defer rows.Close()
 	}

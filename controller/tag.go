@@ -9,8 +9,8 @@ func (c *Controller) RegisterTag(ctx context.Context, tagID string) error {
 	return c.storage.RegisterTag(ctx, tagID)
 }
 
-func (c *Controller) ListTags(ctx context.Context) ([]string, error) {
-	return c.storage.ListTags(ctx)
+func (c *Controller) ListTagIDs(ctx context.Context) ([]string, error) {
+	return c.storage.ListTagIDs(ctx)
 }
 
 func (c *Controller) DeregisterTag(ctx context.Context, tagID string) error {
@@ -25,17 +25,17 @@ func (c *Controller) DeregisterTag(ctx context.Context, tagID string) error {
 }
 
 func (c *Controller) isTagInUse(ctx context.Context, tagID string) (bool, error) {
-	poolIDs, err := c.storage.ListPoolIDsByTagIDs(ctx, tagID)
+	poolIDs, err := c.storage.ListPoolIDs(ctx, tagID)
 	if err != nil {
 		return false, err
 	}
 
-	taskIDs, err := c.storage.ListTaskIDsByPoolIDs(ctx, poolIDs...)
+	taskIDs, err := c.storage.ListTaskIDs(ctx, poolIDs...)
 	if err != nil {
 		return false, err
 	}
 
-	workerIDs, err := c.storage.ListWorkerIDsByTagIDs(ctx, tagID)
+	workerIDs, err := c.storage.ListWorkerIDs(ctx, tagID)
 	if err != nil {
 		return false, err
 	}

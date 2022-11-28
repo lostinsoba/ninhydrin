@@ -11,7 +11,7 @@ import (
 )
 
 func (r *Router) worker(router chi.Router) {
-	router.Get("/", r.listWorkers)
+	router.Get("/", r.listWorkerIDs)
 	router.Post("/", r.registerWorker)
 	router.Route("/{workerID}", func(router chi.Router) {
 		router.Use(middleware.WorkerID)
@@ -20,8 +20,8 @@ func (r *Router) worker(router chi.Router) {
 	})
 }
 
-func (r *Router) listWorkers(writer http.ResponseWriter, request *http.Request) {
-	list, err := r.ctrl.ListWorkers(request.Context())
+func (r *Router) listWorkerIDs(writer http.ResponseWriter, request *http.Request) {
+	list, err := r.ctrl.ListWorkerIDs(request.Context())
 	if err != nil {
 		render.Render(writer, request, dto.InternalServerError(err))
 		return

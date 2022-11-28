@@ -143,9 +143,9 @@ func (s *Storage) RefreshTaskStatuses(ctx context.Context) (tasksUpdated int64, 
 	return
 }
 
-func (s *Storage) ListTaskIDsByPoolIDs(ctx context.Context, poolIDs ...string) (taskIDs []string, err error) {
-	var query = `select id from task where pool_id = any($1)`
-	rows, err := s.db.QueryContext(ctx, query, pq.Array(poolIDs))
+func (s *Storage) ListTaskIDs(ctx context.Context, poolIDs ...string) (taskIDs []string, err error) {
+	var query = `select id from task where $1 or pool_id = any($2)`
+	rows, err := s.db.QueryContext(ctx, query, len(poolIDs) == 0, pq.Array(poolIDs))
 	if rows != nil {
 		defer rows.Close()
 	}

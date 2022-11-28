@@ -16,7 +16,7 @@ func (s *Storage) DeregisterTag(ctx context.Context, tagID string) error {
 	return err
 }
 
-func (s *Storage) ListTags(ctx context.Context) (tagIDs []string, err error) {
+func (s *Storage) ListTagIDs(ctx context.Context) (tagIDs []string, err error) {
 	var query = `select id from tag`
 	rows, err := s.db.QueryContext(ctx, query)
 	if rows != nil {
