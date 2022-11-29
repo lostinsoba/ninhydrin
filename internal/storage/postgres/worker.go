@@ -2,6 +2,8 @@ package postgres
 
 import (
 	"context"
+	"database/sql"
+
 	"github.com/lib/pq"
 
 	"lostinsoba/ninhydrin/internal/model"
@@ -26,13 +28,17 @@ func (s *Storage) ReadWorker(ctx context.Context, workerID string) (worker *mode
 		tagIDs []string
 	)
 	err = s.db.QueryRowContext(ctx, query, workerID).Scan(&id, pq.Array(&tagIDs))
-	if err != nil {
+	switch err {
+	case nil:
+		return &model.Worker{
+			ID:     id,
+			TagIDs: tagIDs,
+		}, nil
+	case sql.ErrNoRows:
+		return nil, model.ErrNotFound{}
+	default:
 		return nil, err
 	}
-	return &model.Worker{
-		ID:     id,
-		TagIDs: tagIDs,
-	}, nil
 }
 
 func (s *Storage) ListWorkerIDs(ctx context.Context, tagIDs ...string) (workerIDs []string, err error) {

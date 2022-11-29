@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/lib/pq"
 
@@ -28,14 +29,18 @@ func (s *Storage) ReadPool(ctx context.Context, poolID string) (pool *model.Pool
 		tagIDs      []string
 	)
 	err = s.db.QueryRowContext(ctx, query, poolID).Scan(&id, &description, pq.Array(&tagIDs))
-	if err != nil {
+	switch err {
+	case nil:
+		return &model.Pool{
+			ID:          id,
+			Description: description,
+			TagIDs:      tagIDs,
+		}, nil
+	case sql.ErrNoRows:
+		return nil, model.ErrNotFound{}
+	default:
 		return nil, err
 	}
-	return &model.Pool{
-		ID:          id,
-		Description: description,
-		TagIDs:      tagIDs,
-	}, nil
 }
 
 func (s *Storage) ListPoolIDs(ctx context.Context, tagIDs ...string) (poolIDs []string, err error) {

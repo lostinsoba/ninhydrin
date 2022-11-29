@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/lib/pq"
 
@@ -25,17 +26,21 @@ func (s *Storage) ReadTask(ctx context.Context, taskID string) (task *model.Task
 		status      string
 	)
 	err = s.db.QueryRowContext(ctx, query, taskID).Scan(&id, &poolID, &timeout, &retriesLeft, &updatedAt, &status)
-	if err != nil {
+	switch err {
+	case nil:
+		return &model.Task{
+			ID:          id,
+			PoolID:      poolID,
+			Timeout:     timeout,
+			RetriesLeft: retriesLeft,
+			UpdatedAt:   updatedAt,
+			Status:      model.TaskStatus(status),
+		}, nil
+	case sql.ErrNoRows:
+		return nil, model.ErrNotFound{}
+	default:
 		return nil, err
 	}
-	return &model.Task{
-		ID:          id,
-		PoolID:      poolID,
-		Timeout:     timeout,
-		RetriesLeft: retriesLeft,
-		UpdatedAt:   updatedAt,
-		Status:      model.TaskStatus(status),
-	}, nil
 }
 
 func (s *Storage) CaptureTasks(ctx context.Context, poolIDs []string, limit int) (tasks []*model.Task, err error) {
