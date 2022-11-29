@@ -18,6 +18,7 @@ func (r *Router) task(router chi.Router) {
 		router.Use(middleware.TaskID)
 		router.Get("/", r.readTask)
 		router.Put("/status", r.updateTaskStatus)
+		router.Delete("/", r.deregisterTask)
 	})
 }
 
@@ -111,4 +112,18 @@ func (r *Router) updateTaskStatus(writer http.ResponseWriter, request *http.Requ
 		return
 	}
 	render.Status(request, http.StatusAccepted)
+}
+
+func (r *Router) deregisterTask(writer http.ResponseWriter, request *http.Request) {
+	taskID, err := middleware.GetTaskID(request)
+	if err != nil {
+		render.Render(writer, request, dto.InvalidRequestError(err))
+		return
+	}
+	err = r.ctrl.DeregisterTask(request.Context(), taskID)
+	if err != nil {
+		render.Render(writer, request, dto.InternalServerError(err))
+		return
+	}
+	render.Status(request, http.StatusOK)
 }

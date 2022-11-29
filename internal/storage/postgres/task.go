@@ -15,6 +15,12 @@ func (s *Storage) RegisterTask(ctx context.Context, task *model.Task) error {
 	return err
 }
 
+func (s *Storage) DeregisterTask(ctx context.Context, taskID string) error {
+	var query = `delete from task where id = $1`
+	_, err := s.db.ExecContext(ctx, query, taskID)
+	return err
+}
+
 func (s *Storage) ReadTask(ctx context.Context, taskID string) (task *model.Task, err error) {
 	var query = `select id, pool_id, timeout, retries_left, status from task where id = $1`
 	var (

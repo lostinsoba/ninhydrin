@@ -13,7 +13,10 @@ import (
 func (r *Router) tag(router chi.Router) {
 	router.Get("/", r.listTagsIDs)
 	router.Post("/", r.registerTag)
-	router.With(middleware.TagID).Delete("/{tagID}", r.deregisterTag)
+	router.Route("/{tagID}", func(router chi.Router) {
+		router.Use(middleware.TagID)
+		router.Delete("/", r.deregisterTag)
+	})
 }
 
 func (r *Router) listTagsIDs(writer http.ResponseWriter, request *http.Request) {
