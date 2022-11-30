@@ -20,6 +20,10 @@ func (tagData *TagData) Bind(r *http.Request) error {
 	return nil
 }
 
+func ToTagData(tag string) *TagData {
+	return &TagData{ID: tag}
+}
+
 func ToTagListData(tags []string) *TagListData {
 	return &TagListData{List: tags}
 }

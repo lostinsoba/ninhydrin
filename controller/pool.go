@@ -11,8 +11,16 @@ func (c *Controller) RegisterPool(ctx context.Context, pool *model.Pool) error {
 	return c.storage.RegisterPool(ctx, pool)
 }
 
-func (c *Controller) ReadPool(ctx context.Context, poolID string) (*model.Pool, error) {
-	return c.storage.ReadPool(ctx, poolID)
+func (c *Controller) ReadPool(ctx context.Context, poolID string) (*model.Pool, bool, error) {
+	pool, err := c.storage.ReadPool(ctx, poolID)
+	switch err.(type) {
+	case nil:
+		return pool, true, nil
+	case model.ErrNotFound:
+		return nil, false, nil
+	default:
+		return nil, false, err
+	}
 }
 
 func (c *Controller) ListPoolIDs(ctx context.Context) ([]string, error) {

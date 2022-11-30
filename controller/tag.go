@@ -3,6 +3,8 @@ package controller
 import (
 	"context"
 	"fmt"
+
+	"lostinsoba/ninhydrin/internal/model"
 )
 
 func (c *Controller) RegisterTag(ctx context.Context, tagID string) error {
@@ -11,6 +13,18 @@ func (c *Controller) RegisterTag(ctx context.Context, tagID string) error {
 
 func (c *Controller) ListTagIDs(ctx context.Context) ([]string, error) {
 	return c.storage.ListTagIDs(ctx)
+}
+
+func (c *Controller) ReadTag(ctx context.Context, tagID string) (string, bool, error) {
+	tag, err := c.storage.ReadTag(ctx, tagID)
+	switch err.(type) {
+	case nil:
+		return tag, true, nil
+	case model.ErrNotFound:
+		return tag, false, nil
+	default:
+		return tag, false, err
+	}
 }
 
 func (c *Controller) DeregisterTag(ctx context.Context, tagID string) error {

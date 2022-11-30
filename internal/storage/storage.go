@@ -11,6 +11,7 @@ import (
 type Storage interface {
 	RegisterTag(ctx context.Context, tagID string) error
 	DeregisterTag(ctx context.Context, tagID string) error
+	ReadTag(ctx context.Context, tagID string) (tag string, err error)
 	ListTagIDs(ctx context.Context) (tagIDs []string, err error)
 
 	RegisterPool(ctx context.Context, pool *model.Pool) error

@@ -56,11 +56,15 @@ func (r *Router) readWorker(writer http.ResponseWriter, request *http.Request) {
 		render.Render(writer, request, dto.InvalidRequestError(err))
 		return
 	}
-	worker, err := r.ctrl.ReadWorker(request.Context(), workerID)
+	worker, ok, err := r.ctrl.ReadWorker(request.Context(), workerID)
 	if err != nil {
 		render.Render(writer, request, dto.InternalServerError(err))
 		return
 	}
+	if !ok {
+		render.Status(request, http.StatusNoContent)
+	}
+
 	response := dto.ToWorkerData(worker)
 	err = render.Render(writer, request, response)
 	if err != nil {

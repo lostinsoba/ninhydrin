@@ -81,11 +81,15 @@ func (r *Router) readTask(writer http.ResponseWriter, request *http.Request) {
 		render.Render(writer, request, dto.InternalServerError(err))
 		return
 	}
-	task, err := r.ctrl.ReadTask(request.Context(), taskID)
+	task, ok, err := r.ctrl.ReadTask(request.Context(), taskID)
 	if err != nil {
 		render.Render(writer, request, dto.InternalServerError(err))
 		return
 	}
+	if !ok {
+		render.Status(request, http.StatusNoContent)
+	}
+
 	response := dto.ToTaskData(task)
 	err = render.Render(writer, request, response)
 	if err != nil {

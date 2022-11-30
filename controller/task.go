@@ -14,8 +14,16 @@ func (c *Controller) DeregisterTask(ctx context.Context, taskID string) error {
 	return c.storage.DeregisterTask(ctx, taskID)
 }
 
-func (c *Controller) ReadTask(ctx context.Context, taskID string) (*model.Task, error) {
-	return c.storage.ReadTask(ctx, taskID)
+func (c *Controller) ReadTask(ctx context.Context, taskID string) (*model.Task, bool, error) {
+	task, err := c.storage.ReadTask(ctx, taskID)
+	switch err.(type) {
+	case nil:
+		return task, true, nil
+	case model.ErrNotFound:
+		return nil, false, nil
+	default:
+		return nil, false, err
+	}
 }
 
 func (c *Controller) ListCurrentTasks(ctx context.Context) ([]*model.Task, error) {

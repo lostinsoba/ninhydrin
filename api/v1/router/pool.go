@@ -57,10 +57,13 @@ func (r *Router) readPool(writer http.ResponseWriter, request *http.Request) {
 		render.Render(writer, request, dto.InvalidRequestError(err))
 		return
 	}
-	pool, err := r.ctrl.ReadPool(request.Context(), poolID)
+	pool, ok, err := r.ctrl.ReadPool(request.Context(), poolID)
 	if err != nil {
 		render.Render(writer, request, dto.InternalServerError(err))
 		return
+	}
+	if !ok {
+		render.Status(request, http.StatusNoContent)
 	}
 
 	response := dto.ToPoolData(pool)

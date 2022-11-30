@@ -15,6 +15,7 @@ func (r *Router) tag(router chi.Router) {
 	router.Post("/", r.registerTag)
 	router.Route("/{tagID}", func(router chi.Router) {
 		router.Use(middleware.TagID)
+		router.Get("/", r.readTag)
 		router.Delete("/", r.deregisterTag)
 	})
 }
@@ -46,6 +47,29 @@ func (r *Router) registerTag(writer http.ResponseWriter, request *http.Request) 
 		return
 	}
 	render.Status(request, http.StatusCreated)
+}
+
+func (r *Router) readTag(writer http.ResponseWriter, request *http.Request) {
+	tagID, err := middleware.GetTagID(request)
+	if err != nil {
+		render.Render(writer, request, dto.InternalServerError(err))
+		return
+	}
+	tag, ok, err := r.ctrl.ReadTag(request.Context(), tagID)
+	if err != nil {
+		render.Render(writer, request, dto.InternalServerError(err))
+		return
+	}
+	if !ok {
+		render.Status(request, http.StatusNoContent)
+	}
+
+	response := dto.ToTagData(tag)
+	err = render.Render(writer, request, response)
+	if err != nil {
+		render.Render(writer, request, dto.InternalServerError(err))
+		return
+	}
 }
 
 func (r *Router) deregisterTag(writer http.ResponseWriter, request *http.Request) {
