@@ -42,7 +42,7 @@ func (s *Storage) ReadWorker(ctx context.Context, workerID string) (worker *mode
 }
 
 func (s *Storage) ListWorkerIDs(ctx context.Context, tagIDs ...string) (workerIDs []string, err error) {
-	var query = `select id from worker where $1 or tag_ids = any($2)`
+	var query = `select id from worker where $1 or tag_ids <@ $2`
 	rows, err := s.db.QueryContext(ctx, query, len(tagIDs) == 0, pq.Array(tagIDs))
 	if rows != nil {
 		defer rows.Close()

@@ -2,12 +2,12 @@ package scheduler
 
 import "lostinsoba/ninhydrin/internal/monitoring/exporter"
 
-type metrics struct {
+type Metrics struct {
 	statusesRefreshed func(float64)
 }
 
-func newMetrics(exporter exporter.Exporter) *metrics {
-	return &metrics{
+func NewMetrics(exporter exporter.Exporter) *Metrics {
+	return &Metrics{
 		statusesRefreshed: exporter.RegisterCounter("statuses_refreshed"),
 	}
 }

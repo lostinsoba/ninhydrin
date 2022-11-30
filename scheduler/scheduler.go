@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"lostinsoba/ninhydrin/controller"
-	"lostinsoba/ninhydrin/internal/monitoring/exporter"
 	"lostinsoba/ninhydrin/internal/monitoring/logger"
 )
 
@@ -14,15 +13,15 @@ type Scheduler struct {
 	interval time.Duration
 	cancel   context.CancelFunc
 
-	metrics *metrics
+	metrics *Metrics
 	log     logger.Logger
 }
 
-func NewScheduler(ctrl *controller.Controller, interval time.Duration, exporter exporter.Exporter, log logger.Logger) *Scheduler {
+func NewScheduler(ctrl *controller.Controller, interval time.Duration, metrics *Metrics, log logger.Logger) *Scheduler {
 	return &Scheduler{
 		ctrl:     ctrl,
 		interval: interval,
-		metrics:  newMetrics(exporter),
+		metrics:  metrics,
 		log:      log,
 	}
 }

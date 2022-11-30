@@ -44,7 +44,7 @@ func (s *Storage) ReadPool(ctx context.Context, poolID string) (pool *model.Pool
 }
 
 func (s *Storage) ListPoolIDs(ctx context.Context, tagIDs ...string) (poolIDs []string, err error) {
-	var query = `select id from pool where $1 or tag_ids = any($2)`
+	var query = `select id from pool where $1 or tag_ids <@ $2`
 	rows, err := s.db.QueryContext(ctx, query, len(tagIDs) == 0, pq.Array(tagIDs))
 	if rows != nil {
 		defer rows.Close()
