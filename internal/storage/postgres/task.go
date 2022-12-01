@@ -145,9 +145,9 @@ func (s *Storage) ListCurrentTasks(ctx context.Context) (tasks []*model.Task, er
 
 func (s *Storage) RefreshTaskStatuses(ctx context.Context) (tasksUpdated int64, err error) {
 	var query = `
-		update task set status = $1, retries_left = 0, updated_at = now() at time zone 'utc'
-		where status = $2 and $3 - updated_at > timeout`
-	result, err := s.db.ExecContext(ctx, query, model.TaskStatusTimeout, model.TaskStatusInProgress, util.UnixEpoch())
+		update task set status = $1, retries_left = 0, updated_at = $2
+		where status = $3 and $2 - updated_at > timeout`
+	result, err := s.db.ExecContext(ctx, query, model.TaskStatusTimeout, util.UnixEpoch(), model.TaskStatusInProgress)
 	if err != nil {
 		return
 	}
