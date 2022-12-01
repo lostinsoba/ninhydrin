@@ -1,4 +1,4 @@
-package router
+package user
 
 import (
 	"net/http"
@@ -62,6 +62,7 @@ func (r *Router) readTag(writer http.ResponseWriter, request *http.Request) {
 	}
 	if !ok {
 		render.Status(request, http.StatusNoContent)
+		return
 	}
 
 	response := dto.ToTagData(tag)

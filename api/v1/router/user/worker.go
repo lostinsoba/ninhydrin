@@ -1,4 +1,4 @@
-package router
+package user
 
 import (
 	"net/http"
@@ -63,6 +63,7 @@ func (r *Router) readWorker(writer http.ResponseWriter, request *http.Request) {
 	}
 	if !ok {
 		render.Status(request, http.StatusNoContent)
+		return
 	}
 
 	response := dto.ToWorkerData(worker)
