@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	reqHeaderWorkerID = "X-NINHYDRIN-WORKER-ID"
+	reqHeaderWorkerID = "X-Ninhydrin-Worker-ID"
 )
 
 func WorkerID(next http.Handler) http.Handler {

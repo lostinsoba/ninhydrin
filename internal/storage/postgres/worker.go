@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/lib/pq"
 
@@ -20,31 +21,47 @@ func (s *Storage) DeregisterWorker(ctx context.Context, workerID string) error {
 	return err
 }
 
-func (s *Storage) ListWorkers(ctx context.Context) (workers []*model.Worker, err error) {
-	var query = `select id, tag_ids from worker`
-	rows, err := s.db.QueryContext(ctx, query)
+func (s *Storage) ReadWorker(ctx context.Context, workerID string) (worker *model.Worker, err error) {
+	var query = `select id, tag_ids from worker where id = $1`
+	var (
+		id     string
+		tagIDs []string
+	)
+	err = s.db.QueryRowContext(ctx, query, workerID).Scan(&id, pq.Array(&tagIDs))
+	switch err {
+	case nil:
+		return &model.Worker{
+			ID:     id,
+			TagIDs: tagIDs,
+		}, nil
+	case sql.ErrNoRows:
+		return nil, model.ErrNotFound{}
+	default:
+		return nil, err
+	}
+}
+
+func (s *Storage) ListWorkerIDs(ctx context.Context, tagIDs ...string) (workerIDs []string, err error) {
+	var query = `select id from worker where $1 or tag_ids <@ $2`
+	rows, err := s.db.QueryContext(ctx, query, len(tagIDs) == 0, pq.Array(tagIDs))
 	if rows != nil {
 		defer rows.Close()
 	}
 	if err != nil {
 		return nil, err
 	}
-	workers = make([]*model.Worker, 0)
+	workerIDs = make([]string, 0)
 	for rows.Next() {
 		var (
-			id     string
-			tagIDs []string
+			id string
 		)
-		err = rows.Scan(&id, pq.Array(&tagIDs))
+		err = rows.Scan(&id)
 		if err != nil {
 			return nil, err
 		}
-		workers = append(workers, &model.Worker{
-			ID:     id,
-			TagIDs: tagIDs,
-		})
+		workerIDs = append(workerIDs, id)
 	}
-	return workers, nil
+	return workerIDs, nil
 }
 
 func (s *Storage) ListWorkerTagIDs(ctx context.Context, workerID string) (tagIDs []string, err error) {

@@ -53,7 +53,9 @@ func main() {
 	serviceController := controller.New(serviceStorage)
 
 	ctx := context.Background()
-	service := scheduler.NewScheduler(serviceController, cfg.Scheduler.Interval, exporter, log)
+
+	metrics := scheduler.NewMetrics(exporter)
+	service := scheduler.NewScheduler(serviceController, cfg.Scheduler.Interval, metrics, log)
 	service.Run(ctx)
 
 	done := make(chan os.Signal, 1)

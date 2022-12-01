@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/lib/pq"
 
@@ -20,8 +21,30 @@ func (s *Storage) DeregisterPool(ctx context.Context, poolID string) error {
 	return err
 }
 
-func (s *Storage) ListPools(ctx context.Context, tagIDs ...string) (pools []*model.Pool, err error) {
-	var query = `select id, description, tag_ids from pool where $1 or tag_ids = any($2)`
+func (s *Storage) ReadPool(ctx context.Context, poolID string) (pool *model.Pool, err error) {
+	var query = `select id, description, tag_ids from pool where id = $1`
+	var (
+		id          string
+		description string
+		tagIDs      []string
+	)
+	err = s.db.QueryRowContext(ctx, query, poolID).Scan(&id, &description, pq.Array(&tagIDs))
+	switch err {
+	case nil:
+		return &model.Pool{
+			ID:          id,
+			Description: description,
+			TagIDs:      tagIDs,
+		}, nil
+	case sql.ErrNoRows:
+		return nil, model.ErrNotFound{}
+	default:
+		return nil, err
+	}
+}
+
+func (s *Storage) ListPoolIDs(ctx context.Context, tagIDs ...string) (poolIDs []string, err error) {
+	var query = `select id from pool where $1 or tag_ids <@ $2`
 	rows, err := s.db.QueryContext(ctx, query, len(tagIDs) == 0, pq.Array(tagIDs))
 	if rows != nil {
 		defer rows.Close()
@@ -30,22 +53,16 @@ func (s *Storage) ListPools(ctx context.Context, tagIDs ...string) (pools []*mod
 		return
 	}
 
-	pools = make([]*model.Pool, 0)
+	poolIDs = make([]string, 0)
 	for rows.Next() {
 		var (
-			id          string
-			description string
-			tagIDs      []string
+			id string
 		)
-		err = rows.Scan(&id, &description, pq.Array(&tagIDs))
+		err = rows.Scan(&id)
 		if err != nil {
 			return
 		}
-		pools = append(pools, &model.Pool{
-			ID:          id,
-			Description: description,
-			TagIDs:      tagIDs,
-		})
+		poolIDs = append(poolIDs, id)
 	}
 	return
 }

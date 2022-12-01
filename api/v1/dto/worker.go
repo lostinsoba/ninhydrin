@@ -46,16 +46,12 @@ func ToWorkerData(worker *model.Worker) *WorkerData {
 	}
 }
 
-func ToWorkerListData(workers []*model.Worker) *WorkerListData {
-	list := make([]*WorkerData, 0, len(workers))
-	for _, worker := range workers {
-		list = append(list, ToWorkerData(worker))
-	}
-	return &WorkerListData{List: list}
+func ToWorkerListData(workerIDs []string) *WorkerListData {
+	return &WorkerListData{List: workerIDs}
 }
 
 type WorkerListData struct {
-	List []*WorkerData `json:"list"`
+	List []string `json:"list"`
 }
 
 func (*WorkerListData) Render(w http.ResponseWriter, r *http.Request) error {

@@ -20,9 +20,9 @@ create table task
 (
     id           text        not null,
     pool_id      text        not null,
-    timeout      interval    not null,
+    timeout      integer     not null,
     retries_left smallint    not null,
-    updated_at   timestamp   not null default (now() at time zone 'utc'),
+    updated_at   bigint      not null,
     status       task_status not null
 );
 alter table task add constraint task_unique_id unique (id);
