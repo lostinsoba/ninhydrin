@@ -1,4 +1,4 @@
-package router
+package user
 
 import (
 	"net/http"
@@ -28,7 +28,7 @@ func (r *Router) listPoolIDs(writer http.ResponseWriter, request *http.Request) 
 		return
 	}
 
-	response := dto.ToPoolListData(list)
+	response := dto.ToPoolIDListData(list)
 	err = render.Render(writer, request, response)
 	if err != nil {
 		render.Render(writer, request, dto.InternalServerError(err))
@@ -64,6 +64,7 @@ func (r *Router) readPool(writer http.ResponseWriter, request *http.Request) {
 	}
 	if !ok {
 		render.Status(request, http.StatusNoContent)
+		return
 	}
 
 	response := dto.ToPoolData(pool)

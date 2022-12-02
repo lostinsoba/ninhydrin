@@ -15,3 +15,5 @@ develop-compose: develop-images
 		-f develop/compose/network.yml \
 		-f develop/compose/storage.yml \
 		-f develop/compose/ninhydrin.yml up
+
+develop: develop-compose

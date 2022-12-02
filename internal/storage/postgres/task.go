@@ -107,42 +107,6 @@ func (s *Storage) UpdateTaskStatus(ctx context.Context, taskID string, status mo
 	return err
 }
 
-func (s *Storage) ListCurrentTasks(ctx context.Context) (tasks []*model.Task, err error) {
-	var query = `select id, pool_id, timeout, retries_left, updated_at, status 
-					from task where status <> $1 order by updated_at desc`
-	rows, err := s.db.QueryContext(ctx, query, model.TaskStatusDone)
-	if rows != nil {
-		defer rows.Close()
-	}
-	if err != nil {
-		return nil, err
-	}
-	tasks = make([]*model.Task, 0)
-	for rows.Next() {
-		var (
-			id          string
-			poolID      string
-			timeout     int64
-			retriesLeft int
-			updatedAt   int64
-			status      string
-		)
-		err = rows.Scan(&id, &poolID, &timeout, &retriesLeft, &updatedAt, &status)
-		if err != nil {
-			return
-		}
-		tasks = append(tasks, &model.Task{
-			ID:          id,
-			PoolID:      poolID,
-			Timeout:     timeout,
-			RetriesLeft: retriesLeft,
-			UpdatedAt:   updatedAt,
-			Status:      model.TaskStatus(status),
-		})
-	}
-	return
-}
-
 func (s *Storage) RefreshTaskStatuses(ctx context.Context) (tasksUpdated int64, err error) {
 	var query = `
 		update task set status = $1, retries_left = 0, updated_at = $2

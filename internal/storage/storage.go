@@ -25,7 +25,6 @@ type Storage interface {
 	ReadTask(ctx context.Context, taskID string) (task *model.Task, err error)
 	CaptureTasks(ctx context.Context, poolIDs []string, limit int) (tasks []*model.Task, err error)
 	UpdateTaskStatus(ctx context.Context, taskID string, status model.TaskStatus) error
-	ListCurrentTasks(ctx context.Context) (tasks []*model.Task, err error)
 	ListTaskIDs(ctx context.Context, poolIDs ...string) (taskIDs []string, err error)
 	RefreshTaskStatuses(ctx context.Context) (tasksUpdated int64, err error)
 

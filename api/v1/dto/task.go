@@ -52,6 +52,18 @@ func ToTaskData(task *model.Task) *TaskData {
 	}
 }
 
+func ToTaskIDListData(taskIDs []string) *TaskIDListData {
+	return &TaskIDListData{List: taskIDs}
+}
+
+type TaskIDListData struct {
+	List []string `json:"list"`
+}
+
+func (*TaskIDListData) Render(w http.ResponseWriter, r *http.Request) error {
+	return nil
+}
+
 func ToTaskListData(tasks []*model.Task) *TaskListData {
 	list := make([]*TaskData, 0, len(tasks))
 	for _, task := range tasks {

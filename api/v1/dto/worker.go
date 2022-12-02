@@ -46,14 +46,14 @@ func ToWorkerData(worker *model.Worker) *WorkerData {
 	}
 }
 
-func ToWorkerListData(workerIDs []string) *WorkerListData {
-	return &WorkerListData{List: workerIDs}
+func ToWorkerIDListData(workerIDs []string) *WorkerIDListData {
+	return &WorkerIDListData{List: workerIDs}
 }
 
-type WorkerListData struct {
+type WorkerIDListData struct {
 	List []string `json:"list"`
 }
 
-func (*WorkerListData) Render(w http.ResponseWriter, r *http.Request) error {
+func (*WorkerIDListData) Render(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
