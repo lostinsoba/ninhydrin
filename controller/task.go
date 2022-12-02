@@ -26,8 +26,8 @@ func (c *Controller) ReadTask(ctx context.Context, taskID string) (*model.Task, 
 	}
 }
 
-func (c *Controller) ListCurrentTasks(ctx context.Context) ([]*model.Task, error) {
-	return c.storage.ListCurrentTasks(ctx)
+func (c *Controller) ListTaskIDs(ctx context.Context) ([]string, error) {
+	return c.storage.ListTaskIDs(ctx)
 }
 
 func (c *Controller) CaptureTasks(ctx context.Context, workerID string, limit int) ([]*model.Task, error) {

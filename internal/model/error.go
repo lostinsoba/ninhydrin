@@ -2,6 +2,6 @@ package model
 
 type ErrNotFound struct{}
 
-func (e ErrNotFound) Error() string {
+func (ErrNotFound) Error() string {
 	return "not found"
 }

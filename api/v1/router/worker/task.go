@@ -19,7 +19,8 @@ func (r *Router) task(router chi.Router) {
 }
 
 func (r *Router) captureTasks(writer http.ResponseWriter, request *http.Request) {
-	workerID, err := middleware.GetWorkerAuth(request)
+	// TODO: add actual tokens instead of worker id
+	workerID, err := middleware.GetWorkerToken(request)
 	if err != nil {
 		render.Render(writer, request, dto.InvalidRequestError(err))
 		return

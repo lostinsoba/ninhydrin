@@ -11,7 +11,7 @@ import (
 )
 
 func (r *Router) task(router chi.Router) {
-	router.Get("/", r.listCurrentTasks)
+	router.Get("/", r.listTasks)
 	router.Post("/", r.registerTask)
 	router.Route("/{taskID}", func(router chi.Router) {
 		router.Use(middleware.TaskID)
@@ -20,13 +20,13 @@ func (r *Router) task(router chi.Router) {
 	})
 }
 
-func (r *Router) listCurrentTasks(writer http.ResponseWriter, request *http.Request) {
-	list, err := r.ctrl.ListCurrentTasks(request.Context())
+func (r *Router) listTasks(writer http.ResponseWriter, request *http.Request) {
+	list, err := r.ctrl.ListTaskIDs(request.Context())
 	if err != nil {
 		render.Render(writer, request, dto.InternalServerError(err))
 		return
 	}
-	response := dto.ToTaskListData(list)
+	response := dto.ToTaskIDListData(list)
 	err = render.Render(writer, request, response)
 	if err != nil {
 		render.Render(writer, request, dto.InternalServerError(err))

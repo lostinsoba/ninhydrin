@@ -49,14 +49,14 @@ func ToPoolData(pool *model.Pool) *PoolData {
 	}
 }
 
-func ToPoolListData(pools []string) *PoolListData {
-	return &PoolListData{List: pools}
+func ToPoolIDListData(pools []string) *PoolIDListData {
+	return &PoolIDListData{List: pools}
 }
 
-type PoolListData struct {
+type PoolIDListData struct {
 	List []string `json:"list"`
 }
 
-func (*PoolListData) Render(w http.ResponseWriter, r *http.Request) error {
+func (*PoolIDListData) Render(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }

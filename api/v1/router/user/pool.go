@@ -28,7 +28,7 @@ func (r *Router) listPoolIDs(writer http.ResponseWriter, request *http.Request) 
 		return
 	}
 
-	response := dto.ToPoolListData(list)
+	response := dto.ToPoolIDListData(list)
 	err = render.Render(writer, request, response)
 	if err != nil {
 		render.Render(writer, request, dto.InternalServerError(err))

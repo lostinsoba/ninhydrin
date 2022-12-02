@@ -26,7 +26,7 @@ func (r *Router) listTagsIDs(writer http.ResponseWriter, request *http.Request) 
 		render.Render(writer, request, dto.InternalServerError(err))
 		return
 	}
-	response := dto.ToTagListData(list)
+	response := dto.ToTagIDListData(list)
 	err = render.Render(writer, request, response)
 	if err != nil {
 		render.Render(writer, request, dto.InternalServerError(err))

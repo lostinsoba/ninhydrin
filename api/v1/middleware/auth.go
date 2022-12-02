@@ -7,21 +7,21 @@ import (
 )
 
 const (
-	reqHeaderWorkerID = "X-Ninhydrin-Worker-ID"
+	reqHeaderWorkerToken = "X-Ninhydrin-Worker"
 )
 
-func WorkerAuth(next http.Handler) http.Handler {
+func WorkerToken(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-		userLogin := request.Header.Get(reqHeaderWorkerID)
-		ctx := context.WithValue(request.Context(), reqHeaderWorkerID, userLogin)
+		token := request.Header.Get(reqHeaderWorkerToken)
+		ctx := context.WithValue(request.Context(), reqHeaderWorkerToken, token)
 		next.ServeHTTP(writer, request.WithContext(ctx))
 	})
 }
 
-func GetWorkerAuth(request *http.Request) (string, error) {
-	workerID, ok := request.Context().Value(reqHeaderWorkerID).(string)
+func GetWorkerToken(request *http.Request) (string, error) {
+	token, ok := request.Context().Value(reqHeaderWorkerToken).(string)
 	if !ok {
-		return "", fmt.Errorf("%s not present", reqHeaderWorkerID)
+		return "", fmt.Errorf("%s not present", reqHeaderWorkerToken)
 	}
-	return workerID, nil
+	return token, nil
 }

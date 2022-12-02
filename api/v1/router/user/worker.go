@@ -27,7 +27,7 @@ func (r *Router) listWorkerIDs(writer http.ResponseWriter, request *http.Request
 		return
 	}
 
-	response := dto.ToWorkerListData(list)
+	response := dto.ToWorkerIDListData(list)
 	err = render.Render(writer, request, response)
 	if err != nil {
 		render.Render(writer, request, dto.InternalServerError(err))
