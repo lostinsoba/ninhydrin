@@ -3,9 +3,10 @@ package middleware
 import (
 	"context"
 	"fmt"
-	"github.com/go-chi/chi"
 	"net/http"
 	"strconv"
+
+	"github.com/go-chi/chi"
 )
 
 const (

@@ -2,6 +2,9 @@ GO_VERSION := "1.16"
 VERSION_DEVELOP := "develop"
 GIT_COMMIT := $(shell git log -1 --pretty=format:%h)
 
+lint:
+	docker run --rm -v $$(pwd):/app -w /app golangci/golangci-lint:v1.50.1 golangci-lint run -v
+
 develop-images:
 	docker build \
 		--build-arg GO_VERSION=${GO_VERSION} \
