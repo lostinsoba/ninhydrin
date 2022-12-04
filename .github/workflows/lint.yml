@@ -14,5 +14,5 @@ jobs:
         run: make linter_version >> $LINTER_VERSION
       - name: run linter
         uses: golangci/golangci-lint-action@v2
-          with:
-            version: "${{ env.LINTER_VERSION }}"
+        with:
+          version: v${{ env.LINTER_VERSION }}
