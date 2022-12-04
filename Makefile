@@ -22,7 +22,7 @@ develop: develop-compose
 # run linter
 LINTER_VERSION := "1.50.1"
 
-linter_version:
+linter-version:
 	@echo ${LINTER_VERSION}
 
 lint:
