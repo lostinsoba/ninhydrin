@@ -20,5 +20,14 @@ linters:
     - unused
     - whitespace
 
+issues:
+  exclude-rules:
+    - path: api/v1/middleware
+      linters:
+        - staticcheck
+    - path: api/v1/router
+      linters:
+        - errcheck
+
 run:
   timeout: 5m
