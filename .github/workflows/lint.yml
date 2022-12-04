@@ -15,4 +15,4 @@ jobs:
       - name: run linter
         uses: golangci/golangci-lint-action@v2
           with:
-            version: v$LINTER_VERSION
+            version: v${{ env.LINTER_VERSION }}
