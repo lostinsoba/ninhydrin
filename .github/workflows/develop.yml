@@ -18,4 +18,4 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: build and publish
-        run: make develop-publish
+        run: make develop-ghcr

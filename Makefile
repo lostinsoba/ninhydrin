@@ -13,9 +13,6 @@ develop-image:
 		--build-arg GIT_COMMIT=${GIT_COMMIT} \
 		-f ninhydrin.Dockerfile -t lostinsoba/ninhydrin:${VERSION_DEVELOP} .
 
-develop-publish: develop-image
-	docker push ghcr.io/lostinsoba/ninhydrin:${VERSION_DEVELOP}
-
 develop-compose: develop-image
 	docker-compose \
 		-f develop/compose/monitoring.yml \
@@ -24,6 +21,15 @@ develop-compose: develop-image
 		-f develop/compose/ninhydrin.yml up
 
 develop: develop-compose
+
+# publish to ghcr
+develop-ghcr:
+	docker build \
+		--build-arg GO_VERSION=${GO_VERSION} \
+		--build-arg VERSION=${VERSION_DEVELOP} \
+		--build-arg GIT_COMMIT=${GIT_COMMIT} \
+		-f ninhydrin.Dockerfile -t ghcr.io/lostinsoba/ninhydrin:${VERSION_DEVELOP} .
+	docker push ghcr.io/lostinsoba/ninhydrin:${VERSION_DEVELOP}
 
 # run linter
 LINTER_VERSION := "1.50.1"
