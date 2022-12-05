@@ -14,7 +14,7 @@ develop-image:
 		-f ninhydrin.Dockerfile -t lostinsoba/ninhydrin:${VERSION_DEVELOP} .
 
 develop-publish: develop-image
-	docker push lostinsoba/ninhydrin:${VERSION_DEVELOP}
+	docker push ghcr.io/lostinsoba/ninhydrin:${VERSION_DEVELOP}
 
 develop-compose: develop-image
 	docker-compose \
