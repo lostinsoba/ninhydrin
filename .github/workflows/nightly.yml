@@ -3,7 +3,7 @@ name: publish nightly image
 on:
   push:
     branches:
-      - feature/tidying-up
+      - develop
 
 jobs:
   publish_nightly:
