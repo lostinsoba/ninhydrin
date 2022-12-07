@@ -1,4 +1,4 @@
-name: publish develop image
+name: publish nightly image
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
       - feature/tidying-up
 
 jobs:
-  lint:
+  publish_nightly:
     runs-on: ubuntu-latest
     steps:
       - name: checkout
@@ -18,4 +18,4 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: build and publish
-        run: make develop-ghcr
+        run: make nightly

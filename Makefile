@@ -1,7 +1,9 @@
 # build docker images
 GO_VERSION := "1.16"
-VERSION_DEVELOP := "develop"
 GIT_COMMIT := $(shell git log -1 --pretty=format:%h)
+
+VERSION_DEVELOP := "develop"
+VERSION_NIGHTLY := "nightly"
 
 go-version:
 	@echo ${GO_VERSION}
@@ -22,14 +24,14 @@ develop-compose: develop-image
 
 develop: develop-compose
 
-# publish to ghcr
-develop-ghcr:
+# publish nightly
+nightly:
 	docker build \
 		--build-arg GO_VERSION=${GO_VERSION} \
-		--build-arg VERSION=${VERSION_DEVELOP} \
+		--build-arg VERSION=${VERSION_NIGHTLY} \
 		--build-arg GIT_COMMIT=${GIT_COMMIT} \
-		-f ninhydrin.Dockerfile -t ghcr.io/lostinsoba/ninhydrin:${VERSION_DEVELOP} .
-	docker push ghcr.io/lostinsoba/ninhydrin:${VERSION_DEVELOP}
+		-f ninhydrin.Dockerfile -t ghcr.io/lostinsoba/ninhydrin:${VERSION_NIGHTLY} .
+	docker push ghcr.io/lostinsoba/ninhydrin:${VERSION_NIGHTLY}
 
 # run linter
 LINTER_VERSION := "1.50.1"

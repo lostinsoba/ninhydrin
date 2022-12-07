@@ -28,8 +28,6 @@ LABEL "org.opencontainers.image.title"="Ninhydrin"
 LABEL "org.opencontainers.image.description"="Distributed task registry"
 LABEL "org.opencontainers.image.url"="https://github.com/lostinsoba/ninhydrin"
 LABEL "org.opencontainers.image.licenses"="AGPL-3.0"
-LABEL "org.opencontainers.image.version"=${VERSION}
-LABEL "org.opencontainers.image.revision"=${GIT_COMMIT}
 
 RUN apk add --no-cache ca-certificates && update-ca-certificates
 RUN addgroup -S ninhydrin && adduser -S ninhydrin -G ninhydrin
