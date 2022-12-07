@@ -1,8 +1,8 @@
-FROM golang:${GO_VERSION}-alpine as builder
-
 ARG VERSION=""
 ARG GO_VERSION=""
 ARG GIT_COMMIT=""
+
+FROM golang:${GO_VERSION}-alpine as builder
 
 LABEL "org.opencontainers.image.title"="Ninhydrin"
 LABEL "org.opencontainers.image.description"="Distributed task registry"
