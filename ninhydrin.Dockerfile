@@ -1,9 +1,10 @@
-ARG GO_VERSION=""
-FROM golang:${GO_VERSION}-alpine as builder
-RUN apk add --no-cache git
-
 ARG VERSION=""
+ARG GO_VERSION=""
 ARG GIT_COMMIT=""
+
+FROM golang:${GO_VERSION}-alpine as builder
+
+RUN apk add --no-cache git
 
 WORKDIR /go/src/lostinsoba/ninhydrin
 
@@ -22,6 +23,12 @@ RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo \
     -o build/scheduler lostinsoba/ninhydrin/cmd/scheduler
 
 FROM alpine
+
+LABEL "org.opencontainers.image.title"="Ninhydrin"
+LABEL "org.opencontainers.image.description"="Distributed task registry"
+LABEL "org.opencontainers.image.url"="https://github.com/lostinsoba/ninhydrin"
+LABEL "org.opencontainers.image.licenses"="AGPL-3.0"
+
 RUN apk add --no-cache ca-certificates && update-ca-certificates
 RUN addgroup -S ninhydrin && adduser -S ninhydrin -G ninhydrin
 USER ninhydrin

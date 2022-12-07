@@ -11,7 +11,6 @@ import (
 type Scheduler struct {
 	ctrl     *controller.Controller
 	interval time.Duration
-	cancel   context.CancelFunc
 
 	metrics *Metrics
 	log     logger.Logger

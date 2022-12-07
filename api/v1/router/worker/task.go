@@ -43,30 +43,6 @@ func (r *Router) captureTasks(writer http.ResponseWriter, request *http.Request)
 	}
 }
 
-func (r *Router) readTask(writer http.ResponseWriter, request *http.Request) {
-	taskID, err := middleware.GetTaskID(request)
-	if err != nil {
-		render.Render(writer, request, dto.InternalServerError(err))
-		return
-	}
-	task, ok, err := r.ctrl.ReadTask(request.Context(), taskID)
-	if err != nil {
-		render.Render(writer, request, dto.InternalServerError(err))
-		return
-	}
-	if !ok {
-		render.Status(request, http.StatusNoContent)
-		return
-	}
-
-	response := dto.ToTaskData(task)
-	err = render.Render(writer, request, response)
-	if err != nil {
-		render.Render(writer, request, dto.InternalServerError(err))
-		return
-	}
-}
-
 func (r *Router) updateTaskStatus(writer http.ResponseWriter, request *http.Request) {
 	taskID, err := middleware.GetTaskID(request)
 	if err != nil {

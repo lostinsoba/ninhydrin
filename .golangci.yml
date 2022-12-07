@@ -1,0 +1,33 @@
+linters:
+  disable-all: true
+  enable:
+    - bodyclose
+    - errcheck
+    - goconst
+    - gocyclo
+    - gofmt
+    - goimports
+    - gomnd
+    - gosimple
+    - govet
+    - ineffassign
+    - misspell
+    - prealloc
+    - staticcheck
+    - typecheck
+    - unconvert
+    - unparam
+    - unused
+    - whitespace
+
+issues:
+  exclude-rules:
+    - path: api/v1/middleware
+      linters:
+        - staticcheck
+    - path: api/v1/router
+      linters:
+        - errcheck
+
+run:
+  timeout: 5m
