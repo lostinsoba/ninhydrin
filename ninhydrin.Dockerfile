@@ -1,9 +1,17 @@
-ARG GO_VERSION=""
 FROM golang:${GO_VERSION}-alpine as builder
-RUN apk add --no-cache git
 
 ARG VERSION=""
+ARG GO_VERSION=""
 ARG GIT_COMMIT=""
+
+LABEL "org.opencontainers.image.title"="Ninhydrin"
+LABEL "org.opencontainers.image.description"="Distributed task registry"
+LABEL "org.opencontainers.image.url"="https://github.com/lostinsoba/ninhydrin"
+LABEL "org.opencontainers.image.licenses"="AGPL-3.0"
+LABEL "org.opencontainers.image.version"=${VERSION}
+LABEL "org.opencontainers.image.revision"=${GIT_COMMIT}
+
+RUN apk add --no-cache git
 
 WORKDIR /go/src/lostinsoba/ninhydrin
 
