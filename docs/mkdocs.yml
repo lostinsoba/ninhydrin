@@ -2,3 +2,4 @@ site_name: Ninhydrin
 theme:
   name: yeti
   nav_style: dark
+docs_dir: "."

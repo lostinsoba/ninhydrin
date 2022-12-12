@@ -1,4 +1,6 @@
 # build docker images
+SERVICE := "lostinsoba/ninhydrin"
+
 GO_VERSION := "1.16"
 GIT_COMMIT := $(shell git log -1 --pretty=format:%h)
 
@@ -32,6 +34,12 @@ nightly:
 		--build-arg GIT_COMMIT=${GIT_COMMIT} \
 		-f ninhydrin.Dockerfile -t ghcr.io/lostinsoba/ninhydrin:${VERSION_NIGHTLY} .
 	docker push ghcr.io/lostinsoba/ninhydrin:${VERSION_NIGHTLY}
+
+# run documentation service
+docs-web:
+	python3 -m venv ${SERVICE}
+	. ${SERVICE}/bin/activate && ${SERVICE}/bin/pip install -r ./docs/requirements.txt
+	. ${SERVICE}/bin/activate && mkdocs serve -f ./docs/mkdocs.yml
 
 # run linter
 LINTER_VERSION := "1.50.1"
