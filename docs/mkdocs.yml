@@ -2,4 +2,8 @@ site_name: Ninhydrin
 theme:
   name: yeti
   nav_style: dark
+nav:
+  - index.md
+  - api.md
+  - develop.md
 docs_dir: src
