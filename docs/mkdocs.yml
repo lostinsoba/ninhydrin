@@ -2,5 +2,4 @@ site_name: Ninhydrin
 theme:
   name: yeti
   nav_style: dark
-docs_dir: "."
-site_dir: "../target/mkdocs"
+docs_dir: src
