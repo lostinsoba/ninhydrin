@@ -3,4 +3,4 @@ theme:
   name: yeti
   nav_style: dark
 docs_dir: "."
-site_dir: "__localbuild__/site"
+site_dir: "../target/mkdocs"
