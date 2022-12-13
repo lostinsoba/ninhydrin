@@ -1,14 +1,5 @@
 # API Reference
 
-1. [User API](#user-api)  
-1.1 [Tags](#user-api-tags)  
-1.2 [Pools](#user-api-pools)  
-1.3 [Tasks](#user-api-tasks)  
-1.4 [Workers](#user-api-workers)  
-
-2. [Worker API](#worker-api)  
-2.1 [Tasks](#worker-api-tasks)
-
 ## <a name="user-api"></a> User API
 
 ### <a name="user-api-tags"></a> Tags

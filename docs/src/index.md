@@ -1,13 +1,9 @@
-# Work in progress
+# Installation
 
+Work in progress!  
 Not production ready! Use at your own risk!
 
-# Development environment
-
-1. [Installation](#installation)  
-2. [Configuration](#configuration) 
-
-## <a name="installation"></a> Installation
+## <a name="docker-images"></a> Docker images
 
 Lookup latest release at [GHCR](https://github.com/lostinsoba/ninhydrin/pkgs/container/ninhydrin)
 

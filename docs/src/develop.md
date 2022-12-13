@@ -1,10 +1,5 @@
 # Development environment
 
-1. [Installation](#installation)  
-1.1 [Docker Compose](#installation-docker-compose)  
-
-2. [Debugging](#debugging)  
-
 ## <a name="installation"></a> Installation
 
 Fork the repository and/or clone the `develop` branch:
