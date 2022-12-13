@@ -1,0 +1,15 @@
+site_name: Ninhydrin
+theme:
+  name: material
+  palette:
+    scheme: slate
+    primary: deep purple
+  features:
+    - header.autohide
+    - navigation.top
+    - toc.follow
+nav:
+  - index.md
+  - api.md
+  - develop.md
+docs_dir: src

@@ -33,6 +33,14 @@ nightly:
 		-f ninhydrin.Dockerfile -t ghcr.io/lostinsoba/ninhydrin:${VERSION_NIGHTLY} .
 	docker push ghcr.io/lostinsoba/ninhydrin:${VERSION_NIGHTLY}
 
+# run documentation service
+DOC_ENV := ".venv"
+
+docs-web:
+	python3 -m venv ${DOC_ENV}
+	. ${DOC_ENV}/bin/activate && ${DOC_ENV}/bin/pip install -r ./docs/requirements.txt
+	. ${DOC_ENV}/bin/activate && mkdocs serve -f ./docs/mkdocs.yml
+
 # run linter
 LINTER_VERSION := "1.50.1"
 

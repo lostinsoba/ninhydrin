@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	reqHeaderWorkerToken = "X-Ninhydrin-Worker"
+	reqHeaderWorkerToken = "X-Ninhydrin-Worker-Token"
 )
 
 func WorkerToken(next http.Handler) http.Handler {
