@@ -1,4 +1,4 @@
-package user
+package admin
 
 import (
 	"github.com/go-chi/chi"
