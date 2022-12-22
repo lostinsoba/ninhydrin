@@ -11,7 +11,7 @@ import (
 )
 
 func (r *Router) tag(router chi.Router) {
-	router.Get("/", r.listTagsIDs)
+	router.Get("/", r.listTagIDs)
 	router.Post("/", r.registerTag)
 	router.Route("/{tagID}", func(router chi.Router) {
 		router.Use(middleware.TagID)
@@ -20,7 +20,7 @@ func (r *Router) tag(router chi.Router) {
 	})
 }
 
-func (r *Router) listTagsIDs(writer http.ResponseWriter, request *http.Request) {
+func (r *Router) listTagIDs(writer http.ResponseWriter, request *http.Request) {
 	list, err := r.ctrl.ListTagIDs(request.Context())
 	if err != nil {
 		render.Render(writer, request, dto.InternalServerError(err))

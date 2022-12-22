@@ -86,13 +86,9 @@ func (s *Storage) CaptureTaskIDs(ctx context.Context, poolID string, limit int) 
 	return
 }
 
-func (s *Storage) UpdateTaskStatus(ctx context.Context, taskID string, status model.TaskStatus) error {
-	var query = `update task 
-					set status = $1, 
-					    retries_left = retries_left - (case when $2 then 1 else 0 end), 
-					    updated_at = $3 
-					where id = $4`
-	_, err := s.db.ExecContext(ctx, query, string(status), status == model.TaskStatusFailed, util.UnixEpoch(), taskID)
+func (s *Storage) SetTaskStatus(ctx context.Context, taskID string, status model.TaskStatus) error {
+	var query = `update task set status = $1, updated_at = $2 where id = $3`
+	_, err := s.db.ExecContext(ctx, query, status, util.UnixEpoch(), taskID)
 	return err
 }
 

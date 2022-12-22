@@ -26,16 +26,12 @@ func (c *Controller) ReadTask(ctx context.Context, taskID string) (*model.Task, 
 	}
 }
 
-func (c *Controller) ListTaskIDs(ctx context.Context) ([]string, error) {
-	return c.storage.ListTaskIDs(ctx)
+func (c *Controller) ListTaskIDs(ctx context.Context, poolIDs ...string) ([]string, error) {
+	return c.storage.ListTaskIDs(ctx, poolIDs...)
 }
 
 func (c *Controller) CaptureTaskIDs(ctx context.Context, poolID string, limit int) ([]string, error) {
 	return c.storage.CaptureTaskIDs(ctx, poolID, limit)
-}
-
-func (c *Controller) UpdateTaskStatus(ctx context.Context, taskID string, status model.TaskStatus) error {
-	return c.storage.UpdateTaskStatus(ctx, taskID, status)
 }
 
 func (c *Controller) RefreshTaskStatuses(ctx context.Context) (tasksUpdated int64, err error) {

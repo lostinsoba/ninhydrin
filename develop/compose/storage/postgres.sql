@@ -26,11 +26,3 @@ create table task
     status       task_status not null
 );
 alter table task add constraint task_unique_id unique (id);
-
--- worker
-create table worker
-(
-    id      text   not null,
-    tag_ids text[] not null
-);
-alter table worker add constraint worker_unique_id unique (id);

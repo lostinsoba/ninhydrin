@@ -23,9 +23,10 @@ type Storage interface {
 	RegisterTask(ctx context.Context, task *model.Task) error
 	DeregisterTask(ctx context.Context, taskID string) error
 	ReadTask(ctx context.Context, taskID string) (task *model.Task, err error)
-	CaptureTaskIDs(ctx context.Context, poolID string, limit int) (taskIDs []string, err error)
-	UpdateTaskStatus(ctx context.Context, taskID string, status model.TaskStatus) error
 	ListTaskIDs(ctx context.Context, poolIDs ...string) (taskIDs []string, err error)
+
+	CaptureTaskIDs(ctx context.Context, poolID string, limit int) (taskIDs []string, err error)
+	SetTaskStatus(ctx context.Context, taskID string, status model.TaskStatus) error
 	RefreshTaskStatuses(ctx context.Context) (tasksUpdated int64, err error)
 }
 

@@ -18,6 +18,10 @@ func (r *Router) pool(router chi.Router) {
 		router.Get("/", r.readPool)
 		router.Put("/", r.updatePool)
 		router.Delete("/", r.deregisterPool)
+		router.Route("/tasks", func(router chi.Router) {
+			router.Get("/", r.listPoolTasksIDs)
+			router.Get("/capture", r.captureTaskIDs)
+		})
 	})
 }
 
@@ -102,4 +106,47 @@ func (r *Router) deregisterPool(writer http.ResponseWriter, request *http.Reques
 		return
 	}
 	render.Status(request, http.StatusOK)
+}
+
+func (r *Router) listPoolTasksIDs(writer http.ResponseWriter, request *http.Request) {
+	poolID, err := middleware.GetPoolID(request)
+	if err != nil {
+		render.Render(writer, request, dto.InvalidRequestError(err))
+		return
+	}
+	list, err := r.ctrl.ListTaskIDs(request.Context(), poolID)
+	if err != nil {
+		render.Render(writer, request, dto.InternalServerError(err))
+		return
+	}
+	response := dto.ToTaskIDListData(list)
+	err = render.Render(writer, request, response)
+	if err != nil {
+		render.Render(writer, request, dto.InternalServerError(err))
+		return
+	}
+}
+
+func (r *Router) captureTaskIDs(writer http.ResponseWriter, request *http.Request) {
+	poolID, err := middleware.GetPoolID(request)
+	if err != nil {
+		render.Render(writer, request, dto.InvalidRequestError(err))
+		return
+	}
+	limit, err := middleware.GetTaskCaptureLimit(request)
+	if err != nil {
+		render.Render(writer, request, dto.InvalidRequestError(err))
+		return
+	}
+	list, err := r.ctrl.CaptureTaskIDs(request.Context(), poolID, limit)
+	if err != nil {
+		render.Render(writer, request, dto.InternalServerError(err))
+		return
+	}
+	response := dto.ToTaskIDListData(list)
+	err = render.Render(writer, request, response)
+	if err != nil {
+		render.Render(writer, request, dto.InternalServerError(err))
+		return
+	}
 }

@@ -63,18 +63,3 @@ type TaskIDListData struct {
 func (*TaskIDListData) Render(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
-
-type TaskStatusUpdateData struct {
-	Status string `json:"status"`
-}
-
-func (statusUpdateData *TaskStatusUpdateData) Bind(r *http.Request) error {
-	if statusUpdateData.Status == "" {
-		return fmt.Errorf("status required")
-	}
-	return nil
-}
-
-func (statusUpdateData *TaskStatusUpdateData) ToModel() model.TaskStatus {
-	return model.TaskStatus(statusUpdateData.Status)
-}
