@@ -19,8 +19,7 @@ func (r *Router) task(router chi.Router) {
 }
 
 func (r *Router) captureTasks(writer http.ResponseWriter, request *http.Request) {
-	// TODO: add actual tokens instead of worker id
-	workerID, err := middleware.GetWorkerToken(request)
+	poolID, err := middleware.GetPoolID(request)
 	if err != nil {
 		render.Render(writer, request, dto.InvalidRequestError(err))
 		return
@@ -30,12 +29,12 @@ func (r *Router) captureTasks(writer http.ResponseWriter, request *http.Request)
 		render.Render(writer, request, dto.InvalidRequestError(err))
 		return
 	}
-	list, err := r.ctrl.CaptureTasks(request.Context(), workerID, limit)
+	list, err := r.ctrl.CaptureTaskIDs(request.Context(), poolID, limit)
 	if err != nil {
 		render.Render(writer, request, dto.InternalServerError(err))
 		return
 	}
-	response := dto.ToTaskListData(list)
+	response := dto.ToTaskIDListData(list)
 	err = render.Render(writer, request, response)
 	if err != nil {
 		render.Render(writer, request, dto.InternalServerError(err))

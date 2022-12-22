@@ -64,22 +64,6 @@ func (*TaskIDListData) Render(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-func ToTaskListData(tasks []*model.Task) *TaskListData {
-	list := make([]*TaskData, 0, len(tasks))
-	for _, task := range tasks {
-		list = append(list, ToTaskData(task))
-	}
-	return &TaskListData{List: list}
-}
-
-type TaskListData struct {
-	List []*TaskData `json:"list"`
-}
-
-func (*TaskListData) Render(w http.ResponseWriter, r *http.Request) error {
-	return nil
-}
-
 type TaskStatusUpdateData struct {
 	Status string `json:"status"`
 }

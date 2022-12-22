@@ -9,8 +9,7 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/go-chi/render"
 
-	"lostinsoba/ninhydrin/api/v1/router/admin"
-	"lostinsoba/ninhydrin/api/v1/router/worker"
+	v1 "lostinsoba/ninhydrin/api/v1/router"
 	"lostinsoba/ninhydrin/controller"
 	"lostinsoba/ninhydrin/internal/monitoring/logger"
 )
@@ -28,14 +27,8 @@ func New(addr string, ctrl *controller.Controller, log logger.Logger) *Service {
 	router := chi.NewRouter()
 	router.Use(render.SetContentType(render.ContentTypeJSON))
 
-	var (
-		adminRouter  = admin.New(ctrl)
-		workerRouter = worker.New(ctrl)
-	)
-	router.Route("/v1", func(router chi.Router) {
-		router.Route("/admin", adminRouter.Route())
-		router.Route("/worker", workerRouter.Route())
-	})
+	v1Router := v1.New(ctrl)
+	router.Route("/v1", v1Router.Route())
 
 	return &Service{
 		httpServer: &http.Server{

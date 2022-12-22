@@ -43,16 +43,9 @@ func (c *Controller) isTagInUse(ctx context.Context, tagID string) (bool, error)
 	if err != nil {
 		return false, err
 	}
-
 	taskIDs, err := c.storage.ListTaskIDs(ctx, poolIDs...)
 	if err != nil {
 		return false, err
 	}
-
-	workerIDs, err := c.storage.ListWorkerIDs(ctx, tagID)
-	if err != nil {
-		return false, err
-	}
-
-	return len(poolIDs)+len(taskIDs)+len(workerIDs) > 0, nil
+	return len(poolIDs)+len(taskIDs) > 0, nil
 }

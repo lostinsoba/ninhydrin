@@ -23,16 +23,10 @@ type Storage interface {
 	RegisterTask(ctx context.Context, task *model.Task) error
 	DeregisterTask(ctx context.Context, taskID string) error
 	ReadTask(ctx context.Context, taskID string) (task *model.Task, err error)
-	CaptureTasks(ctx context.Context, poolIDs []string, limit int) (tasks []*model.Task, err error)
+	CaptureTaskIDs(ctx context.Context, poolID string, limit int) (taskIDs []string, err error)
 	UpdateTaskStatus(ctx context.Context, taskID string, status model.TaskStatus) error
 	ListTaskIDs(ctx context.Context, poolIDs ...string) (taskIDs []string, err error)
 	RefreshTaskStatuses(ctx context.Context) (tasksUpdated int64, err error)
-
-	RegisterWorker(ctx context.Context, worker *model.Worker) error
-	DeregisterWorker(ctx context.Context, workerID string) error
-	ReadWorker(ctx context.Context, workerID string) (worker *model.Worker, err error)
-	ListWorkerIDs(ctx context.Context, tagIDs ...string) (workerIDs []string, err error)
-	ListWorkerTagIDs(ctx context.Context, workerID string) (tagIDs []string, err error)
 }
 
 func NewStorage(kind string, settings map[string]string) (Storage, error) {

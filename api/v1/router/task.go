@@ -1,4 +1,4 @@
-package admin
+package router
 
 import (
 	"net/http"

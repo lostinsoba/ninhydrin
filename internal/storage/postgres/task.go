@@ -50,19 +50,19 @@ func (s *Storage) ReadTask(ctx context.Context, taskID string) (task *model.Task
 	}
 }
 
-func (s *Storage) CaptureTasks(ctx context.Context, poolIDs []string, limit int) (tasks []*model.Task, err error) {
-	var query = `update task set status = $1, updated_at = $2
+func (s *Storage) CaptureTaskIDs(ctx context.Context, poolID string, limit int) (taskIDs []string, err error) {
+	var query = `update task set status = $1, retries_left = retries_left-1, updated_at = $2
 		where id in (
 			select id
 			from task
 			where pool_id = any($3) and status = any($4) and retries_left > 0
 			limit $5
-		) returning id, pool_id, timeout, retries_left, updated_at, status`
+		) returning id`
 	taskCaptureStatuses := model.GetTaskCaptureStatuses()
 	rows, err := s.db.QueryContext(ctx, query,
 		model.TaskStatusInProgress,
 		util.UnixEpoch(),
-		pq.Array(poolIDs),
+		poolID,
 		pq.Array(&taskCaptureStatuses),
 		limit,
 	)
@@ -72,28 +72,16 @@ func (s *Storage) CaptureTasks(ctx context.Context, poolIDs []string, limit int)
 	if err != nil {
 		return nil, err
 	}
-	tasks = make([]*model.Task, 0)
+	taskIDs = make([]string, 0)
 	for rows.Next() {
 		var (
-			id          string
-			poolID      string
-			timeout     int64
-			retriesLeft int
-			updatedAt   int64
-			status      string
+			id string
 		)
-		err = rows.Scan(&id, &poolID, &timeout, &retriesLeft, &updatedAt, &status)
+		err = rows.Scan(&id)
 		if err != nil {
 			return
 		}
-		tasks = append(tasks, &model.Task{
-			ID:          id,
-			PoolID:      poolID,
-			Timeout:     timeout,
-			RetriesLeft: retriesLeft,
-			UpdatedAt:   updatedAt,
-			Status:      model.TaskStatus(status),
-		})
+		taskIDs = append(taskIDs, id)
 	}
 	return
 }
