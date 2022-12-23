@@ -27,7 +27,7 @@ type Storage interface {
 
 	CapturePoolTaskIDs(ctx context.Context, poolID string, limit int) (taskIDs []string, err error)
 	ReleasePoolTaskIDs(ctx context.Context, poolID string, taskIDs []string, status model.TaskStatus) error
-	RefreshTaskStatuses(ctx context.Context) (tasksUpdated int64, err error)
+	RefreshPoolTaskIDs(ctx context.Context, poolID string) (tasksUpdated int64, err error)
 }
 
 func NewStorage(kind string, settings map[string]string) (Storage, error) {

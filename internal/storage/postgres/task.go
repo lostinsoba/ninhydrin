@@ -92,11 +92,11 @@ func (s *Storage) ReleasePoolTaskIDs(ctx context.Context, poolID string, taskIDs
 	return err
 }
 
-func (s *Storage) RefreshTaskStatuses(ctx context.Context) (tasksUpdated int64, err error) {
+func (s *Storage) RefreshPoolTaskIDs(ctx context.Context, poolID string) (tasksUpdated int64, err error) {
 	var query = `
 		update task set status = $1, retries_left = 0, updated_at = $2
-		where status = $3 and $2 - updated_at > timeout`
-	result, err := s.db.ExecContext(ctx, query, model.TaskStatusTimeout, util.UnixEpoch(), model.TaskStatusInProgress)
+		where pool_id = $3 and status = $4 and $2 - updated_at > timeout`
+	result, err := s.db.ExecContext(ctx, query, model.TaskStatusTimeout, util.UnixEpoch(), poolID, model.TaskStatusInProgress)
 	if err != nil {
 		return
 	}

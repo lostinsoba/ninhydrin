@@ -2,6 +2,7 @@ package controller
 
 import (
 	"context"
+	"sync"
 
 	"lostinsoba/ninhydrin/internal/model"
 )
@@ -39,5 +40,63 @@ func (c *Controller) ReleasePoolTaskIDs(ctx context.Context, poolID string, task
 }
 
 func (c *Controller) RefreshTaskStatuses(ctx context.Context) (tasksUpdated int64, err error) {
-	return c.storage.RefreshTaskStatuses(ctx)
+	poolIDs, err := c.storage.ListPoolIDs(ctx)
+	if err != nil {
+		return
+	}
+
+	totalCount := len(poolIDs)
+	if totalCount == 0 {
+		return
+	}
+
+	const maxBatchSize = 5
+
+	for start := 0; start < totalCount; start += maxBatchSize {
+		end := start + maxBatchSize
+		if end > totalCount {
+			end = totalCount
+		}
+
+		tasksUpdatedIncr, err := c.refreshPoolTaskStatuses(ctx, poolIDs[start:end])
+		if err != nil {
+			return
+		}
+		tasksUpdated += tasksUpdatedIncr
+	}
+
+	return
+}
+
+func (c *Controller) refreshPoolTaskStatuses(ctx context.Context, poolIDs []string) (tasksUpdated int64, err error) {
+	errChan := make(chan error)
+	doneChan := make(chan bool)
+
+	var wg sync.WaitGroup
+	for _, poolID := range poolIDs {
+		wg.Add(1)
+		go func(wg *sync.WaitGroup, poolID string) {
+			tasksUpdatedIncr, err := c.storage.RefreshPoolTaskIDs(ctx, poolID)
+			if err != nil {
+				errChan <- err
+			} else {
+				tasksUpdated += tasksUpdatedIncr
+			}
+			wg.Done()
+		}(&wg, poolID)
+	}
+
+	go func() {
+		wg.Wait()
+		close(doneChan)
+	}()
+
+	select {
+	case <-doneChan:
+		break
+	case err = <-errChan:
+		close(errChan)
+	}
+
+	return
 }
