@@ -50,7 +50,7 @@ func (s *Storage) ReadTask(ctx context.Context, taskID string) (task *model.Task
 	}
 }
 
-func (s *Storage) CaptureTaskIDs(ctx context.Context, poolID string, limit int) (taskIDs []string, err error) {
+func (s *Storage) CapturePoolTaskIDs(ctx context.Context, poolID string, limit int) (taskIDs []string, err error) {
 	var query = `update task set status = $1, retries_left = retries_left-1, updated_at = $2
 		where id in (
 			select id
@@ -86,9 +86,9 @@ func (s *Storage) CaptureTaskIDs(ctx context.Context, poolID string, limit int) 
 	return
 }
 
-func (s *Storage) SetTaskStatus(ctx context.Context, taskID string, status model.TaskStatus) error {
-	var query = `update task set status = $1, updated_at = $2 where id = $3`
-	_, err := s.db.ExecContext(ctx, query, status, util.UnixEpoch(), taskID)
+func (s *Storage) ReleasePoolTaskIDs(ctx context.Context, poolID string, taskIDs []string, status model.TaskStatus) error {
+	var query = `update task set status = $1, updated_at = $2 where pool_id = $3 and id = any($4)`
+	_, err := s.db.ExecContext(ctx, query, status, util.UnixEpoch(), poolID, pq.Array(taskIDs))
 	return err
 }
 

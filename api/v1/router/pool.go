@@ -20,7 +20,8 @@ func (r *Router) pool(router chi.Router) {
 		router.Delete("/", r.deregisterPool)
 		router.Route("/tasks", func(router chi.Router) {
 			router.Get("/", r.listPoolTasksIDs)
-			router.Get("/capture", r.captureTaskIDs)
+			router.Get("/capture", r.capturePoolTaskIDs)
+			router.Put("/release", r.releasePoolTaskIDs)
 		})
 	})
 }
@@ -127,7 +128,7 @@ func (r *Router) listPoolTasksIDs(writer http.ResponseWriter, request *http.Requ
 	}
 }
 
-func (r *Router) captureTaskIDs(writer http.ResponseWriter, request *http.Request) {
+func (r *Router) capturePoolTaskIDs(writer http.ResponseWriter, request *http.Request) {
 	poolID, err := middleware.GetPoolID(request)
 	if err != nil {
 		render.Render(writer, request, dto.InvalidRequestError(err))
@@ -138,7 +139,7 @@ func (r *Router) captureTaskIDs(writer http.ResponseWriter, request *http.Reques
 		render.Render(writer, request, dto.InvalidRequestError(err))
 		return
 	}
-	list, err := r.ctrl.CaptureTaskIDs(request.Context(), poolID, limit)
+	list, err := r.ctrl.CapturePoolTaskIDs(request.Context(), poolID, limit)
 	if err != nil {
 		render.Render(writer, request, dto.InternalServerError(err))
 		return
@@ -149,4 +150,24 @@ func (r *Router) captureTaskIDs(writer http.ResponseWriter, request *http.Reques
 		render.Render(writer, request, dto.InternalServerError(err))
 		return
 	}
+}
+
+func (r *Router) releasePoolTaskIDs(writer http.ResponseWriter, request *http.Request) {
+	poolID, err := middleware.GetPoolID(request)
+	if err != nil {
+		render.Render(writer, request, dto.InvalidRequestError(err))
+		return
+	}
+	release := dto.ReleaseData{}
+	err = render.Bind(request, &release)
+	if err != nil {
+		render.Render(writer, request, dto.InvalidRequestError(err))
+		return
+	}
+	err = r.ctrl.ReleasePoolTaskIDs(request.Context(), poolID, release.TaskIDs, release.Status)
+	if err != nil {
+		render.Render(writer, request, dto.InternalServerError(err))
+		return
+	}
+	render.Status(request, http.StatusOK)
 }

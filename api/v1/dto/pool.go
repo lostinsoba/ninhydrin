@@ -21,13 +21,7 @@ func (poolData *PoolData) Bind(r *http.Request) error {
 	if poolData.ID == "" {
 		return fmt.Errorf("id required")
 	}
-	var validTagIDsCount uint
-	for _, tagIDs := range poolData.TagIDs {
-		if tagIDs != "" {
-			validTagIDsCount++
-		}
-	}
-	if validTagIDsCount == 0 {
+	if len(poolData.TagIDs) == 0 {
 		return fmt.Errorf("tag_ids required")
 	}
 	return nil
@@ -58,5 +52,20 @@ type PoolIDListData struct {
 }
 
 func (*PoolIDListData) Render(w http.ResponseWriter, r *http.Request) error {
+	return nil
+}
+
+type ReleaseData struct {
+	TaskIDs []string `json:"task_ids"`
+	Status  string   `json:"status"`
+}
+
+func (releaseData *ReleaseData) Bind(r *http.Request) error {
+	if len(releaseData.TaskIDs) == 0 {
+		return fmt.Errorf("task_ids required")
+	}
+	if releaseData.Status == "" {
+		return fmt.Errorf("status required")
+	}
 	return nil
 }
