@@ -4,6 +4,8 @@ import (
 	"context"
 	"sync"
 
+	"github.com/lostinsoba/chain"
+
 	"lostinsoba/ninhydrin/internal/model"
 )
 
@@ -45,19 +47,9 @@ func (c *Controller) RefreshTaskStatuses(ctx context.Context) (tasksUpdated int6
 		return
 	}
 
-	totalCount := len(poolIDs)
-	if totalCount == 0 {
-		return
-	}
-
-	const maxBatchSize = 5
-
-	for start := 0; start < totalCount; start += maxBatchSize {
-		end := start + maxBatchSize
-		if end > totalCount {
-			end = totalCount
-		}
-
+	chn := chain.New(len(poolIDs), chain.OptionStep(5))
+	for chn.Next() {
+		start, end := chn.Bounds()
 		tasksUpdatedIncr, err := c.refreshPoolTaskStatuses(ctx, poolIDs[start:end])
 		if err != nil {
 			return
