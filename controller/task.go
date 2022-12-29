@@ -9,16 +9,16 @@ import (
 	"lostinsoba/ninhydrin/internal/model"
 )
 
-func (c *Controller) RegisterTask(ctx context.Context, task *model.Task) error {
-	return c.storage.RegisterTask(ctx, task)
+func (ctrl *Controller) RegisterTask(ctx context.Context, task *model.Task) error {
+	return ctrl.storage.RegisterTask(ctx, task)
 }
 
-func (c *Controller) DeregisterTask(ctx context.Context, taskID string) error {
-	return c.storage.DeregisterTask(ctx, taskID)
+func (ctrl *Controller) DeregisterTask(ctx context.Context, taskID string) error {
+	return ctrl.storage.DeregisterTask(ctx, taskID)
 }
 
-func (c *Controller) ReadTask(ctx context.Context, taskID string) (*model.Task, bool, error) {
-	task, err := c.storage.ReadTask(ctx, taskID)
+func (ctrl *Controller) ReadTask(ctx context.Context, taskID string) (*model.Task, bool, error) {
+	task, err := ctrl.storage.ReadTask(ctx, taskID)
 	switch err.(type) {
 	case nil:
 		return task, true, nil
@@ -29,28 +29,31 @@ func (c *Controller) ReadTask(ctx context.Context, taskID string) (*model.Task, 
 	}
 }
 
-func (c *Controller) ListTaskIDs(ctx context.Context, poolIDs ...string) ([]string, error) {
-	return c.storage.ListTaskIDs(ctx, poolIDs...)
+func (ctrl *Controller) ListTaskIDs(ctx context.Context, poolIDs ...string) ([]string, error) {
+	return ctrl.storage.ListTaskIDs(ctx, poolIDs...)
 }
 
-func (c *Controller) CapturePoolTaskIDs(ctx context.Context, poolID string, limit int) ([]string, error) {
-	return c.storage.CapturePoolTaskIDs(ctx, poolID, limit)
+func (ctrl *Controller) CapturePoolTaskIDs(ctx context.Context, poolID string, limit int) ([]string, error) {
+	return ctrl.storage.CapturePoolTaskIDs(ctx, poolID, limit)
 }
 
-func (c *Controller) ReleasePoolTaskIDs(ctx context.Context, poolID string, taskIDs []string, status string) error {
-	return c.storage.ReleasePoolTaskIDs(ctx, poolID, taskIDs, model.TaskStatus(status))
+func (ctrl *Controller) ReleasePoolTaskIDs(ctx context.Context, poolID string, taskIDs []string, status string) error {
+	return ctrl.storage.ReleasePoolTaskIDs(ctx, poolID, taskIDs, model.TaskStatus(status))
 }
 
-func (c *Controller) RefreshTaskStatuses(ctx context.Context) (tasksUpdated int64, err error) {
-	poolIDs, err := c.storage.ListPoolIDs(ctx)
+func (ctrl *Controller) RefreshTaskStatuses(ctx context.Context) (tasksUpdated int64, err error) {
+	poolIDs, err := ctrl.storage.ListPoolIDs(ctx)
 	if err != nil {
 		return
 	}
 
-	chn := chain.New(len(poolIDs), chain.OptionStep(5))
-	for chn.Next() {
-		start, end := chn.Bounds()
-		tasksUpdatedIncr, err := c.refreshPoolTaskStatuses(ctx, poolIDs[start:end])
+	var c chain.Chain
+	c.SetStop(len(poolIDs))
+	c.SetStep(5)
+
+	for c.Next() {
+		start, end := c.Bounds()
+		tasksUpdatedIncr, err := ctrl.refreshPoolTaskStatuses(ctx, poolIDs[start:end])
 		if err != nil {
 			return
 		}
@@ -60,7 +63,7 @@ func (c *Controller) RefreshTaskStatuses(ctx context.Context) (tasksUpdated int6
 	return
 }
 
-func (c *Controller) refreshPoolTaskStatuses(ctx context.Context, poolIDs []string) (tasksUpdated int64, err error) {
+func (ctrl *Controller) refreshPoolTaskStatuses(ctx context.Context, poolIDs []string) (tasksUpdated int64, err error) {
 	errChan := make(chan error)
 	doneChan := make(chan bool)
 
@@ -68,7 +71,7 @@ func (c *Controller) refreshPoolTaskStatuses(ctx context.Context, poolIDs []stri
 	for _, poolID := range poolIDs {
 		wg.Add(1)
 		go func(wg *sync.WaitGroup, poolID string) {
-			tasksUpdatedIncr, err := c.storage.RefreshPoolTaskIDs(ctx, poolID)
+			tasksUpdatedIncr, err := ctrl.storage.RefreshPoolTaskIDs(ctx, poolID)
 			if err != nil {
 				errChan <- err
 			} else {

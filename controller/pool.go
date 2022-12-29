@@ -7,12 +7,12 @@ import (
 	"lostinsoba/ninhydrin/internal/model"
 )
 
-func (c *Controller) RegisterPool(ctx context.Context, pool *model.Pool) error {
-	return c.storage.RegisterPool(ctx, pool)
+func (ctrl *Controller) RegisterPool(ctx context.Context, pool *model.Pool) error {
+	return ctrl.storage.RegisterPool(ctx, pool)
 }
 
-func (c *Controller) ReadPool(ctx context.Context, poolID string) (*model.Pool, bool, error) {
-	pool, err := c.storage.ReadPool(ctx, poolID)
+func (ctrl *Controller) ReadPool(ctx context.Context, poolID string) (*model.Pool, bool, error) {
+	pool, err := ctrl.storage.ReadPool(ctx, poolID)
 	switch err.(type) {
 	case nil:
 		return pool, true, nil
@@ -23,27 +23,27 @@ func (c *Controller) ReadPool(ctx context.Context, poolID string) (*model.Pool, 
 	}
 }
 
-func (c *Controller) ListPoolIDs(ctx context.Context) ([]string, error) {
-	return c.storage.ListPoolIDs(ctx)
+func (ctrl *Controller) ListPoolIDs(ctx context.Context) ([]string, error) {
+	return ctrl.storage.ListPoolIDs(ctx)
 }
 
-func (c *Controller) DeregisterPool(ctx context.Context, poolID string) error {
-	isInUse, err := c.isPoolInUse(ctx, poolID)
+func (ctrl *Controller) DeregisterPool(ctx context.Context, poolID string) error {
+	isInUse, err := ctrl.isPoolInUse(ctx, poolID)
 	if err != nil {
 		return fmt.Errorf("can't check whether pool is in use: %w", err)
 	}
 	if isInUse {
 		return fmt.Errorf("pool is being used")
 	}
-	return c.storage.DeregisterPool(ctx, poolID)
+	return ctrl.storage.DeregisterPool(ctx, poolID)
 }
 
-func (c *Controller) UpdatePool(ctx context.Context, pool *model.Pool) error {
-	return c.storage.UpdatePool(ctx, pool)
+func (ctrl *Controller) UpdatePool(ctx context.Context, pool *model.Pool) error {
+	return ctrl.storage.UpdatePool(ctx, pool)
 }
 
-func (c *Controller) isPoolInUse(ctx context.Context, poolID string) (bool, error) {
-	taskIDs, err := c.storage.ListTaskIDs(ctx, poolID)
+func (ctrl *Controller) isPoolInUse(ctx context.Context, poolID string) (bool, error) {
+	taskIDs, err := ctrl.storage.ListTaskIDs(ctx, poolID)
 	if err != nil {
 		return false, err
 	}
