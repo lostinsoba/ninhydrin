@@ -115,7 +115,7 @@ func (r *Router) releaseTaskIDs(writer http.ResponseWriter, request *http.Reques
 		render.Render(writer, request, dto.InvalidRequestError(err))
 		return
 	}
-	err = r.ctrl.ReleaseTaskIDs(request.Context(), release.TaskIDs, release.Status)
+	err = r.ctrl.ReleaseTaskIDs(request.Context(), release.TaskIDs, dto.ToTaskStatus(release.Status))
 	if err != nil {
 		render.Render(writer, request, dto.InternalServerError(err))
 		return

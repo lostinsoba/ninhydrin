@@ -8,7 +8,7 @@
 GET "v1/task"
 ```
 
-```
+```json
 {
     "list": [
         "Backup_Test_Shards1-10",
@@ -45,7 +45,7 @@ Content-Type: "application/json"
 GET "v1/task/{taskID}"
 ```
 
-```
+```json
 {
     "id": "Backup_Test_Shards1-10",
     "timeout": 360,
@@ -67,7 +67,7 @@ DELETE "v1/task/{taskID}"
 GET "v1/task/capture?limit=n"
 ```
 
-```
+```json
 {
     "list": [
         "Backup_Test_Shards11-21",

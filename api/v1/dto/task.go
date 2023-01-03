@@ -32,7 +32,7 @@ func (taskData *TaskData) ToModel() *model.Task {
 		Timeout:     taskData.Timeout,
 		RetriesLeft: taskData.RetriesLeft,
 		UpdatedAt:   taskData.UpdatedAt,
-		Status:      model.TaskStatus(taskData.Status),
+		Status:      ToTaskStatus(taskData.Status),
 	}
 }
 
@@ -71,4 +71,8 @@ func (releaseData *ReleaseData) Bind(r *http.Request) error {
 		return fmt.Errorf("task_ids required")
 	}
 	return nil
+}
+
+func ToTaskStatus(status string) model.TaskStatus {
+	return model.TaskStatus(status)
 }
