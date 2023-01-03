@@ -15,11 +15,30 @@ func GetTaskCaptureStatuses() []string {
 	}
 }
 
+func IsValidTaskStatus(status TaskStatus) bool {
+	validStatuses := getAllTaskStatuses()
+	for _, validStatus := range validStatuses {
+		if validStatus == status {
+			return true
+		}
+	}
+	return false
+}
+
+func getAllTaskStatuses() []TaskStatus {
+	return []TaskStatus{
+		TaskStatusIdle,
+		TaskStatusInProgress,
+		TaskStatusTimeout,
+		TaskStatusFailed,
+		TaskStatusDone,
+	}
+}
+
 type TaskStatus string
 
 type Task struct {
 	ID          string
-	PoolID      string
 	Timeout     int64
 	RetriesLeft int
 	UpdatedAt   int64

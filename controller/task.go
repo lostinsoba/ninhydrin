@@ -2,20 +2,40 @@ package controller
 
 import (
 	"context"
+	"fmt"
 
 	"lostinsoba/ninhydrin/internal/model"
 )
 
-func (c *Controller) RegisterTask(ctx context.Context, task *model.Task) error {
-	return c.storage.RegisterTask(ctx, task)
+const (
+	defaultTaskStatus  = model.TaskStatusIdle
+	defaultTaskRetries = 5
+	defaultTaskTimeout = 360
+)
+
+func (ctrl *Controller) RegisterTask(ctx context.Context, task *model.Task) error {
+	if task.Status == "" {
+		task.Status = defaultTaskStatus
+	} else {
+		if !model.IsValidTaskStatus(task.Status) {
+			return fmt.Errorf("invalid status")
+		}
+	}
+	if task.RetriesLeft == 0 {
+		task.RetriesLeft = defaultTaskRetries
+	}
+	if task.Timeout == 0 {
+		task.Timeout = defaultTaskTimeout
+	}
+	return ctrl.storage.RegisterTask(ctx, task)
 }
 
-func (c *Controller) DeregisterTask(ctx context.Context, taskID string) error {
-	return c.storage.DeregisterTask(ctx, taskID)
+func (ctrl *Controller) DeregisterTask(ctx context.Context, taskID string) error {
+	return ctrl.storage.DeregisterTask(ctx, taskID)
 }
 
-func (c *Controller) ReadTask(ctx context.Context, taskID string) (*model.Task, bool, error) {
-	task, err := c.storage.ReadTask(ctx, taskID)
+func (ctrl *Controller) ReadTask(ctx context.Context, taskID string) (*model.Task, bool, error) {
+	task, err := ctrl.storage.ReadTask(ctx, taskID)
 	switch err.(type) {
 	case nil:
 		return task, true, nil
@@ -26,32 +46,21 @@ func (c *Controller) ReadTask(ctx context.Context, taskID string) (*model.Task, 
 	}
 }
 
-func (c *Controller) ListTaskIDs(ctx context.Context) ([]string, error) {
-	return c.storage.ListTaskIDs(ctx)
+func (ctrl *Controller) ListTaskIDs(ctx context.Context) ([]string, error) {
+	return ctrl.storage.ListTaskIDs(ctx)
 }
 
-func (c *Controller) CaptureTasks(ctx context.Context, workerID string, limit int) ([]*model.Task, error) {
-	tagIDs, err := c.storage.ListWorkerTagIDs(ctx, workerID)
-	if err != nil {
-		return nil, err
-	}
-	if len(tagIDs) == 0 {
-		return nil, nil
-	}
-	poolIDs, err := c.storage.ListPoolIDs(ctx, tagIDs...)
-	if err != nil {
-		return nil, err
-	}
-	if len(poolIDs) == 0 {
-		return nil, nil
-	}
-	return c.storage.CaptureTasks(ctx, poolIDs, limit)
+func (ctrl *Controller) CaptureTaskIDs(ctx context.Context, limit int) ([]string, error) {
+	return ctrl.storage.CaptureTaskIDs(ctx, limit)
 }
 
-func (c *Controller) UpdateTaskStatus(ctx context.Context, taskID string, status model.TaskStatus) error {
-	return c.storage.UpdateTaskStatus(ctx, taskID, status)
+func (ctrl *Controller) ReleaseTaskIDs(ctx context.Context, taskIDs []string, status model.TaskStatus) error {
+	if !model.IsValidTaskStatus(status) {
+		return fmt.Errorf("invalid status")
+	}
+	return ctrl.storage.ReleaseTaskIDs(ctx, taskIDs, status)
 }
 
-func (c *Controller) RefreshTaskStatuses(ctx context.Context) (tasksUpdated int64, err error) {
-	return c.storage.RefreshTaskStatuses(ctx)
+func (ctrl *Controller) RefreshTaskStatuses(ctx context.Context) (tasksUpdated int64, err error) {
+	return ctrl.storage.RefreshTaskIDs(ctx)
 }

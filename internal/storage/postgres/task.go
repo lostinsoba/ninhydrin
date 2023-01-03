@@ -11,8 +11,8 @@ import (
 )
 
 func (s *Storage) RegisterTask(ctx context.Context, task *model.Task) error {
-	var query = `insert into task (id, pool_id, timeout, retries_left, updated_at, status) values ($1, $2, $3, $4, $5, $6)`
-	_, err := s.db.ExecContext(ctx, query, task.ID, task.PoolID, task.Timeout, task.RetriesLeft, util.UnixEpoch(), string(task.Status))
+	var query = `insert into task (id, timeout, retries_left, updated_at, status) values ($1, $2, $3, $4, $5)`
+	_, err := s.db.ExecContext(ctx, query, task.ID, task.Timeout, task.RetriesLeft, util.UnixEpoch(), string(task.Status))
 	return err
 }
 
@@ -23,21 +23,19 @@ func (s *Storage) DeregisterTask(ctx context.Context, taskID string) error {
 }
 
 func (s *Storage) ReadTask(ctx context.Context, taskID string) (task *model.Task, err error) {
-	var query = `select id, pool_id, timeout, retries_left, updated_at, status from task where id = $1`
+	var query = `select id, timeout, retries_left, updated_at, status from task where id = $1`
 	var (
 		id          string
-		poolID      string
 		timeout     int64
 		retriesLeft int
 		updatedAt   int64
 		status      string
 	)
-	err = s.db.QueryRowContext(ctx, query, taskID).Scan(&id, &poolID, &timeout, &retriesLeft, &updatedAt, &status)
+	err = s.db.QueryRowContext(ctx, query, taskID).Scan(&id, &timeout, &retriesLeft, &updatedAt, &status)
 	switch err {
 	case nil:
 		return &model.Task{
 			ID:          id,
-			PoolID:      poolID,
 			Timeout:     timeout,
 			RetriesLeft: retriesLeft,
 			UpdatedAt:   updatedAt,
@@ -50,19 +48,18 @@ func (s *Storage) ReadTask(ctx context.Context, taskID string) (task *model.Task
 	}
 }
 
-func (s *Storage) CaptureTasks(ctx context.Context, poolIDs []string, limit int) (tasks []*model.Task, err error) {
-	var query = `update task set status = $1, updated_at = $2
+func (s *Storage) CaptureTaskIDs(ctx context.Context, limit int) (taskIDs []string, err error) {
+	var query = `update task set status = $1, retries_left = retries_left-1, updated_at = $2
 		where id in (
 			select id
 			from task
-			where pool_id = any($3) and status = any($4) and retries_left > 0
-			limit $5
-		) returning id, pool_id, timeout, retries_left, updated_at, status`
+			where status = any($3) and retries_left > 0
+			limit $4
+		) returning id`
 	taskCaptureStatuses := model.GetTaskCaptureStatuses()
 	rows, err := s.db.QueryContext(ctx, query,
 		model.TaskStatusInProgress,
 		util.UnixEpoch(),
-		pq.Array(poolIDs),
 		pq.Array(&taskCaptureStatuses),
 		limit,
 	)
@@ -72,43 +69,27 @@ func (s *Storage) CaptureTasks(ctx context.Context, poolIDs []string, limit int)
 	if err != nil {
 		return nil, err
 	}
-	tasks = make([]*model.Task, 0)
+	taskIDs = make([]string, 0)
 	for rows.Next() {
 		var (
-			id          string
-			poolID      string
-			timeout     int64
-			retriesLeft int
-			updatedAt   int64
-			status      string
+			id string
 		)
-		err = rows.Scan(&id, &poolID, &timeout, &retriesLeft, &updatedAt, &status)
+		err = rows.Scan(&id)
 		if err != nil {
 			return
 		}
-		tasks = append(tasks, &model.Task{
-			ID:          id,
-			PoolID:      poolID,
-			Timeout:     timeout,
-			RetriesLeft: retriesLeft,
-			UpdatedAt:   updatedAt,
-			Status:      model.TaskStatus(status),
-		})
+		taskIDs = append(taskIDs, id)
 	}
 	return
 }
 
-func (s *Storage) UpdateTaskStatus(ctx context.Context, taskID string, status model.TaskStatus) error {
-	var query = `update task 
-					set status = $1, 
-					    retries_left = retries_left - (case when $2 then 1 else 0 end), 
-					    updated_at = $3 
-					where id = $4`
-	_, err := s.db.ExecContext(ctx, query, string(status), status == model.TaskStatusFailed, util.UnixEpoch(), taskID)
+func (s *Storage) ReleaseTaskIDs(ctx context.Context, taskIDs []string, status model.TaskStatus) error {
+	var query = `update task set status = $1, updated_at = $2 where id = any($3)`
+	_, err := s.db.ExecContext(ctx, query, status, util.UnixEpoch(), pq.Array(taskIDs))
 	return err
 }
 
-func (s *Storage) RefreshTaskStatuses(ctx context.Context) (tasksUpdated int64, err error) {
+func (s *Storage) RefreshTaskIDs(ctx context.Context) (tasksUpdated int64, err error) {
 	var query = `
 		update task set status = $1, retries_left = 0, updated_at = $2
 		where status = $3 and $2 - updated_at > timeout`
@@ -120,9 +101,9 @@ func (s *Storage) RefreshTaskStatuses(ctx context.Context) (tasksUpdated int64, 
 	return
 }
 
-func (s *Storage) ListTaskIDs(ctx context.Context, poolIDs ...string) (taskIDs []string, err error) {
-	var query = `select id from task where $1 or pool_id <@ $2`
-	rows, err := s.db.QueryContext(ctx, query, len(poolIDs) == 0, pq.Array(poolIDs))
+func (s *Storage) ListTaskIDs(ctx context.Context) (taskIDs []string, err error) {
+	var query = `select id from task`
+	rows, err := s.db.QueryContext(ctx, query)
 	if rows != nil {
 		defer rows.Close()
 	}

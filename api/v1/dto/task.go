@@ -9,7 +9,6 @@ import (
 
 type TaskData struct {
 	ID          string `json:"id"`
-	PoolID      string `json:"pool_id"`
 	Timeout     int64  `json:"timeout,omitempty"`
 	RetriesLeft int    `json:"retries_left,omitempty"`
 	UpdatedAt   int64  `json:"updated_at,omitempty"`
@@ -24,27 +23,22 @@ func (taskData *TaskData) Bind(r *http.Request) error {
 	if taskData.ID == "" {
 		return fmt.Errorf("id required")
 	}
-	if taskData.PoolID == "" {
-		return fmt.Errorf("pool_id required")
-	}
 	return nil
 }
 
 func (taskData *TaskData) ToModel() *model.Task {
 	return &model.Task{
 		ID:          taskData.ID,
-		PoolID:      taskData.PoolID,
 		Timeout:     taskData.Timeout,
 		RetriesLeft: taskData.RetriesLeft,
 		UpdatedAt:   taskData.UpdatedAt,
-		Status:      model.TaskStatus(taskData.Status),
+		Status:      ToTaskStatus(taskData.Status),
 	}
 }
 
 func ToTaskData(task *model.Task) *TaskData {
 	return &TaskData{
 		ID:          task.ID,
-		PoolID:      task.PoolID,
 		Timeout:     task.Timeout,
 		RetriesLeft: task.RetriesLeft,
 		UpdatedAt:   task.UpdatedAt,
@@ -64,33 +58,21 @@ func (*TaskIDListData) Render(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-func ToTaskListData(tasks []*model.Task) *TaskListData {
-	list := make([]*TaskData, 0, len(tasks))
-	for _, task := range tasks {
-		list = append(list, ToTaskData(task))
-	}
-	return &TaskListData{List: list}
+type ReleaseData struct {
+	Status  string   `json:"status"`
+	TaskIDs []string `json:"task_ids"`
 }
 
-type TaskListData struct {
-	List []*TaskData `json:"list"`
-}
-
-func (*TaskListData) Render(w http.ResponseWriter, r *http.Request) error {
-	return nil
-}
-
-type TaskStatusUpdateData struct {
-	Status string `json:"status"`
-}
-
-func (statusUpdateData *TaskStatusUpdateData) Bind(r *http.Request) error {
-	if statusUpdateData.Status == "" {
+func (releaseData *ReleaseData) Bind(r *http.Request) error {
+	if releaseData.Status == "" {
 		return fmt.Errorf("status required")
 	}
+	if len(releaseData.TaskIDs) == 0 {
+		return fmt.Errorf("task_ids required")
+	}
 	return nil
 }
 
-func (statusUpdateData *TaskStatusUpdateData) ToModel() model.TaskStatus {
-	return model.TaskStatus(statusUpdateData.Status)
+func ToTaskStatus(status string) model.TaskStatus {
+	return model.TaskStatus(status)
 }

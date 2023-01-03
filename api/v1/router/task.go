@@ -1,4 +1,4 @@
-package user
+package router
 
 import (
 	"net/http"
@@ -11,8 +11,10 @@ import (
 )
 
 func (r *Router) task(router chi.Router) {
-	router.Get("/", r.listTasks)
+	router.Get("/", r.listTaskIDs)
 	router.Post("/", r.registerTask)
+	router.Get("/capture", r.captureTaskIDs)
+	router.Put("/release", r.releaseTaskIDs)
 	router.Route("/{taskID}", func(router chi.Router) {
 		router.Use(middleware.TaskID)
 		router.Get("/", r.readTask)
@@ -20,7 +22,7 @@ func (r *Router) task(router chi.Router) {
 	})
 }
 
-func (r *Router) listTasks(writer http.ResponseWriter, request *http.Request) {
+func (r *Router) listTaskIDs(writer http.ResponseWriter, request *http.Request) {
 	list, err := r.ctrl.ListTaskIDs(request.Context())
 	if err != nil {
 		render.Render(writer, request, dto.InternalServerError(err))
@@ -80,6 +82,40 @@ func (r *Router) deregisterTask(writer http.ResponseWriter, request *http.Reques
 		return
 	}
 	err = r.ctrl.DeregisterTask(request.Context(), taskID)
+	if err != nil {
+		render.Render(writer, request, dto.InternalServerError(err))
+		return
+	}
+	render.Status(request, http.StatusOK)
+}
+
+func (r *Router) captureTaskIDs(writer http.ResponseWriter, request *http.Request) {
+	limit, err := middleware.GetTaskCaptureLimit(request)
+	if err != nil {
+		render.Render(writer, request, dto.InvalidRequestError(err))
+		return
+	}
+	list, err := r.ctrl.CaptureTaskIDs(request.Context(), limit)
+	if err != nil {
+		render.Render(writer, request, dto.InternalServerError(err))
+		return
+	}
+	response := dto.ToTaskIDListData(list)
+	err = render.Render(writer, request, response)
+	if err != nil {
+		render.Render(writer, request, dto.InternalServerError(err))
+		return
+	}
+}
+
+func (r *Router) releaseTaskIDs(writer http.ResponseWriter, request *http.Request) {
+	release := dto.ReleaseData{}
+	err := render.Bind(request, &release)
+	if err != nil {
+		render.Render(writer, request, dto.InvalidRequestError(err))
+		return
+	}
+	err = r.ctrl.ReleaseTaskIDs(request.Context(), release.TaskIDs, dto.ToTaskStatus(release.Status))
 	if err != nil {
 		render.Render(writer, request, dto.InternalServerError(err))
 		return
