@@ -18,8 +18,6 @@ func New(ctrl *controller.Controller) *Router {
 func (r *Router) Route() func(router chi.Router) {
 	return func(router chi.Router) {
 		router.Use(middleware.Token)
-		router.Route("/tag", r.tag)
-		router.Route("/pool", r.pool)
 		router.Route("/task", r.task)
 	}
 }

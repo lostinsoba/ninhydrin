@@ -19,7 +19,6 @@ type TaskStatus string
 
 type Task struct {
 	ID          string
-	PoolID      string
 	Timeout     int64
 	RetriesLeft int
 	UpdatedAt   int64

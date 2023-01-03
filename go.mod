@@ -7,7 +7,6 @@ require (
 	github.com/go-chi/render v1.0.1
 	github.com/jmoiron/sqlx v1.3.5
 	github.com/lib/pq v1.10.6
-	github.com/lostinsoba/chain v0.1.0
 	github.com/prometheus/client_golang v1.14.0
 	go.uber.org/zap v1.21.0
 	gopkg.in/yaml.v2 v2.4.0
