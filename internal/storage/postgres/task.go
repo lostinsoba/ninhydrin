@@ -2,7 +2,6 @@ package postgres
 
 import (
 	"context"
-	"database/sql"
 
 	"github.com/lib/pq"
 
@@ -13,6 +12,9 @@ import (
 func (s *Storage) RegisterTask(ctx context.Context, task *model.Task) error {
 	var query = `insert into task (id, timeout, retries_left, updated_at, status) values ($1, $2, $3, $4, $5)`
 	_, err := s.db.ExecContext(ctx, query, task.ID, task.Timeout, task.RetriesLeft, util.UnixEpoch(), string(task.Status))
+	if isAlreadyExist(err) {
+		return model.ErrAlreadyExist{}
+	}
 	return err
 }
 
@@ -32,20 +34,19 @@ func (s *Storage) ReadTask(ctx context.Context, taskID string) (task *model.Task
 		status      string
 	)
 	err = s.db.QueryRowContext(ctx, query, taskID).Scan(&id, &timeout, &retriesLeft, &updatedAt, &status)
-	switch err {
-	case nil:
-		return &model.Task{
-			ID:          id,
-			Timeout:     timeout,
-			RetriesLeft: retriesLeft,
-			UpdatedAt:   updatedAt,
-			Status:      model.TaskStatus(status),
-		}, nil
-	case sql.ErrNoRows:
-		return nil, model.ErrNotFound{}
-	default:
+	if err != nil {
+		if isNoRows(err) {
+			return nil, model.ErrNotFound{}
+		}
 		return nil, err
 	}
+	return &model.Task{
+		ID:          id,
+		Timeout:     timeout,
+		RetriesLeft: retriesLeft,
+		UpdatedAt:   updatedAt,
+		Status:      model.TaskStatus(status),
+	}, nil
 }
 
 func (s *Storage) CaptureTaskIDs(ctx context.Context, limit int) (taskIDs []string, err error) {
