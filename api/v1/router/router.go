@@ -18,6 +18,7 @@ func New(ctrl *controller.Controller) *Router {
 func (r *Router) Route() func(router chi.Router) {
 	return func(router chi.Router) {
 		router.Use(middleware.Token)
+		router.Route("/namespace", r.namespace)
 		router.Route("/task", r.task)
 	}
 }

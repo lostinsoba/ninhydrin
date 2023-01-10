@@ -11,7 +11,7 @@ import (
 )
 
 func (r *Router) task(router chi.Router) {
-	router.Get("/", r.listTaskIDs)
+	router.Get("/", r.listTasks)
 	router.Post("/", r.registerTask)
 	router.Get("/capture", r.captureTaskIDs)
 	router.Put("/release", r.releaseTaskIDs)
@@ -22,13 +22,18 @@ func (r *Router) task(router chi.Router) {
 	})
 }
 
-func (r *Router) listTaskIDs(writer http.ResponseWriter, request *http.Request) {
-	list, err := r.ctrl.ListTaskIDs(request.Context())
+func (r *Router) listTasks(writer http.ResponseWriter, request *http.Request) {
+	namespaceID, err := middleware.QueryGetNamespaceID(request)
+	if err != nil {
+		render.Render(writer, request, dto.InvalidRequestError(err))
+		return
+	}
+	list, err := r.ctrl.ListTasks(request.Context(), namespaceID)
 	if err != nil {
 		render.Render(writer, request, dto.InternalServerError(err))
 		return
 	}
-	response := dto.ToTaskIDListData(list)
+	response := dto.ToTaskListData(list)
 	err = render.Render(writer, request, response)
 	if err != nil {
 		render.Render(writer, request, dto.InternalServerError(err))
@@ -63,7 +68,7 @@ func (r *Router) readTask(writer http.ResponseWriter, request *http.Request) {
 		return
 	}
 	if !ok {
-		render.Status(request, http.StatusNoContent)
+		render.NoContent(writer, request)
 		return
 	}
 
@@ -90,17 +95,22 @@ func (r *Router) deregisterTask(writer http.ResponseWriter, request *http.Reques
 }
 
 func (r *Router) captureTaskIDs(writer http.ResponseWriter, request *http.Request) {
-	limit, err := middleware.GetTaskCaptureLimit(request)
+	namespaceID, err := middleware.QueryGetNamespaceID(request)
 	if err != nil {
 		render.Render(writer, request, dto.InvalidRequestError(err))
 		return
 	}
-	list, err := r.ctrl.CaptureTaskIDs(request.Context(), limit)
+	limit, err := middleware.QueryGetTaskCaptureLimit(request)
+	if err != nil {
+		render.Render(writer, request, dto.InvalidRequestError(err))
+		return
+	}
+	list, err := r.ctrl.CaptureTasks(request.Context(), namespaceID, limit)
 	if err != nil {
 		render.Render(writer, request, dto.InternalServerError(err))
 		return
 	}
-	response := dto.ToTaskIDListData(list)
+	response := dto.ToTaskListData(list)
 	err = render.Render(writer, request, response)
 	if err != nil {
 		render.Render(writer, request, dto.InternalServerError(err))

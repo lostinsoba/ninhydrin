@@ -33,7 +33,7 @@ const (
 	queryParamTaskCaptureLimit = "limit"
 )
 
-func GetTaskCaptureLimit(request *http.Request) (int, error) {
+func QueryGetTaskCaptureLimit(request *http.Request) (int, error) {
 	taskCaptureLimitStr := request.URL.Query().Get(queryParamTaskCaptureLimit)
 	if taskCaptureLimitStr == "" {
 		return 0, fmt.Errorf("%s not present", queryParamTaskCaptureLimit)

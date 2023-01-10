@@ -9,12 +9,18 @@ import (
 )
 
 type Storage interface {
+	RegisterNamespace(ctx context.Context, namespace *model.Namespace) error
+	DeregisterNamespace(ctx context.Context, namespaceID string) error
+	CheckNamespaceExists(ctx context.Context, namespaceID string) (exists bool, err error)
+	ReadNamespace(ctx context.Context, namespaceID string) (namespace *model.Namespace, err error)
+	ListNamespaces(ctx context.Context) (namespaces []*model.Namespace, err error)
+
 	RegisterTask(ctx context.Context, task *model.Task) error
 	DeregisterTask(ctx context.Context, taskID string) error
 	ReadTask(ctx context.Context, taskID string) (task *model.Task, err error)
-	ListTaskIDs(ctx context.Context) (taskIDs []string, err error)
+	ListTasks(ctx context.Context, namespaceID string) (tasks []*model.Task, err error)
 
-	CaptureTaskIDs(ctx context.Context, limit int) (taskIDs []string, err error)
+	CaptureTasks(ctx context.Context, namespaceID string, limit int) (tasks []*model.Task, err error)
 	ReleaseTaskIDs(ctx context.Context, taskIDs []string, status model.TaskStatus) error
 	RefreshTaskIDs(ctx context.Context) (tasksUpdated int64, err error)
 }
