@@ -27,6 +27,13 @@ func (ctrl *Controller) RegisterTask(ctx context.Context, task *model.Task) erro
 	if task.Timeout == 0 {
 		task.Timeout = defaultTaskTimeout
 	}
+	exists, err := ctrl.storage.CheckNamespaceExists(ctx, task.NamespaceID)
+	if err != nil {
+		return fmt.Errorf("failed to check namespace %s existence: %w", task.NamespaceID, err)
+	}
+	if !exists {
+		return fmt.Errorf("there's no such namespace: %s", task.NamespaceID)
+	}
 	return ctrl.storage.RegisterTask(ctx, task)
 }
 
@@ -46,12 +53,12 @@ func (ctrl *Controller) ReadTask(ctx context.Context, taskID string) (*model.Tas
 	}
 }
 
-func (ctrl *Controller) ListTaskIDs(ctx context.Context) ([]string, error) {
-	return ctrl.storage.ListTaskIDs(ctx)
+func (ctrl *Controller) ListTasks(ctx context.Context, namespaceID string) ([]*model.Task, error) {
+	return ctrl.storage.ListTasks(ctx, namespaceID)
 }
 
-func (ctrl *Controller) CaptureTaskIDs(ctx context.Context, limit int) ([]string, error) {
-	return ctrl.storage.CaptureTaskIDs(ctx, limit)
+func (ctrl *Controller) CaptureTasks(ctx context.Context, namespaceID string, limit int) ([]*model.Task, error) {
+	return ctrl.storage.CaptureTasks(ctx, namespaceID, limit)
 }
 
 func (ctrl *Controller) ReleaseTaskIDs(ctx context.Context, taskIDs []string, status model.TaskStatus) error {
