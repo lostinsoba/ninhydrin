@@ -1,6 +1,7 @@
 package logger
 
 import (
+	"lostinsoba/ninhydrin/internal/model"
 	"lostinsoba/ninhydrin/internal/monitoring/logger/zap"
 )
 
@@ -16,7 +17,7 @@ type Logger interface {
 	Warn(args ...interface{})
 }
 
-func NewLogger(kind string, settings map[string]string, labels map[string]string) Logger {
+func NewLogger(kind string, settings model.Settings, labels map[string]string) Logger {
 	switch kind {
 	case zap.Kind:
 		return zap.NewLogger(settings, labels)

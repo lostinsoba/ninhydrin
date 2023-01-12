@@ -99,13 +99,13 @@ func (s *Storage) CaptureTasks(ctx context.Context, namespaceID string, limit in
 	return
 }
 
-func (s *Storage) ReleaseTaskIDs(ctx context.Context, taskIDs []string, status model.TaskStatus) error {
+func (s *Storage) ReleaseTasks(ctx context.Context, taskIDs []string, status model.TaskStatus) error {
 	var query = `update task set status = $1, updated_at = $2 where id = any($3)`
 	_, err := s.db.ExecContext(ctx, query, status, util.UnixEpoch(), pq.Array(taskIDs))
 	return err
 }
 
-func (s *Storage) RefreshTaskIDs(ctx context.Context) (tasksUpdated int64, err error) {
+func (s *Storage) RefreshTaskStatuses(ctx context.Context) (tasksUpdated int64, err error) {
 	var query = `
 		update task set status = $1, retries_left = 0, updated_at = $2
 		where status = $3 and $2 - updated_at > timeout`

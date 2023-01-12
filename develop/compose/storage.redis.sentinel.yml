@@ -1,0 +1,56 @@
+version: "3"
+services:
+  ninhydrin-storage-master:
+    image: redis:7.0-alpine
+    container_name: redis-master
+    command: redis-server
+    networks:
+      - ninhydrin
+    ports:
+      - "6379:6379"
+  ninhydrin-storage-slave1:
+    image: redis:7.0-alpine
+    container_name: redis-slave1
+    command: redis-server --slaveof redis-master 6379
+    networks:
+      - ninhydrin
+    ports:
+      - "6380:6379"
+  ninhydrin-storage-slave2:
+    image: redis:7.0-alpine
+    container_name: redis-slave2
+    command: redis-server --slaveof redis-master 6379
+    networks:
+      - ninhydrin
+    ports:
+      - "6381:6379"
+  ninhydrin-storage-sentinel1:
+    image: redis:7.0-alpine
+    container_name: redis-sentinel1
+    command: redis-server /etc/sentinel.conf --sentinel
+    volumes:
+      - ./storage/redis.sentinel.conf:/etc/sentinel.conf
+    networks:
+      - ninhydrin
+    ports:
+      - "26379:26379"
+  ninhydrin-storage-sentinel2:
+    image: redis:7.0-alpine
+    container_name: redis-sentinel2
+    command: redis-server /etc/sentinel.conf --sentinel
+    volumes:
+      - ./storage/redis.sentinel.conf:/etc/sentinel.conf
+    networks:
+      - ninhydrin
+    ports:
+      - "26380:26379"
+  ninhydrin-storage-sentinel3:
+    image: redis:7.0-alpine
+    container_name: redis-sentinel3
+    command: redis-server /etc/sentinel.conf --sentinel
+    volumes:
+      - ./storage/redis.sentinel.conf:/etc/sentinel.conf
+    networks:
+      - ninhydrin
+    ports:
+      - "26381:26379"

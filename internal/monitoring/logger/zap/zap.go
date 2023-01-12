@@ -3,6 +3,8 @@ package zap
 import (
 	zapLogger "go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+
+	"lostinsoba/ninhydrin/internal/model"
 )
 
 const Kind = "zap"
@@ -13,7 +15,7 @@ const (
 	settingLevel = "level"
 )
 
-func NewLogger(settings map[string]string, labels map[string]string) *zapLogger.SugaredLogger {
+func NewLogger(settings model.Settings, labels map[string]string) *zapLogger.SugaredLogger {
 	levelStr := settings[settingLevel]
 	logLevel, err := zapcore.ParseLevel(levelStr)
 	if err != nil {

@@ -14,7 +14,7 @@ func (r *Router) task(router chi.Router) {
 	router.Get("/", r.listTasks)
 	router.Post("/", r.registerTask)
 	router.Get("/capture", r.captureTaskIDs)
-	router.Put("/release", r.releaseTaskIDs)
+	router.Put("/release", r.releaseTasks)
 	router.Route("/{taskID}", func(router chi.Router) {
 		router.Use(middleware.TaskID)
 		router.Get("/", r.readTask)
@@ -118,14 +118,14 @@ func (r *Router) captureTaskIDs(writer http.ResponseWriter, request *http.Reques
 	}
 }
 
-func (r *Router) releaseTaskIDs(writer http.ResponseWriter, request *http.Request) {
+func (r *Router) releaseTasks(writer http.ResponseWriter, request *http.Request) {
 	release := dto.ReleaseData{}
 	err := render.Bind(request, &release)
 	if err != nil {
 		render.Render(writer, request, dto.InvalidRequestError(err))
 		return
 	}
-	err = r.ctrl.ReleaseTaskIDs(request.Context(), release.TaskIDs, dto.ToTaskStatus(release.Status))
+	err = r.ctrl.ReleaseTasks(request.Context(), release.TaskIDs, dto.ToTaskStatus(release.Status))
 	if err != nil {
 		render.Render(writer, request, dto.InternalServerError(err))
 		return

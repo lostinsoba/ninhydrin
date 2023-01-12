@@ -2,11 +2,11 @@
 GO_VERSION := "1.16"
 GIT_COMMIT := $(shell git log -1 --pretty=format:%h)
 
-VERSION_DEVELOP := "develop"
-VERSION_NIGHTLY := "nightly"
-
 go-version:
 	@echo ${GO_VERSION}
+
+# build develop image
+VERSION_DEVELOP := "develop"
 
 develop-image:
 	docker build \
@@ -15,16 +15,21 @@ develop-image:
 		--build-arg GIT_COMMIT=${GIT_COMMIT} \
 		-f ninhydrin.Dockerfile -t lostinsoba/ninhydrin:${VERSION_DEVELOP} .
 
+# launch development environment
+DEVELOP_STORAGE := "postgres"
+
 develop-compose: develop-image
 	docker-compose \
 		-f develop/compose/monitoring.yml \
 		-f develop/compose/network.yml \
-		-f develop/compose/storage.yml \
+		-f develop/compose/storage.${DEVELOP_STORAGE}.yml \
 		-f develop/compose/ninhydrin.yml up
 
 develop: develop-compose
 
 # publish nightly
+VERSION_NIGHTLY := "nightly"
+
 nightly:
 	docker build \
 		--build-arg GO_VERSION=${GO_VERSION} \

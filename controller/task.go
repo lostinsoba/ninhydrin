@@ -61,13 +61,13 @@ func (ctrl *Controller) CaptureTasks(ctx context.Context, namespaceID string, li
 	return ctrl.storage.CaptureTasks(ctx, namespaceID, limit)
 }
 
-func (ctrl *Controller) ReleaseTaskIDs(ctx context.Context, taskIDs []string, status model.TaskStatus) error {
+func (ctrl *Controller) ReleaseTasks(ctx context.Context, taskIDs []string, status model.TaskStatus) error {
 	if !model.IsValidTaskStatus(status) {
 		return fmt.Errorf("invalid status")
 	}
-	return ctrl.storage.ReleaseTaskIDs(ctx, taskIDs, status)
+	return ctrl.storage.ReleaseTasks(ctx, taskIDs, status)
 }
 
 func (ctrl *Controller) RefreshTaskStatuses(ctx context.Context) (tasksUpdated int64, err error) {
-	return ctrl.storage.RefreshTaskIDs(ctx)
+	return ctrl.storage.RefreshTaskStatuses(ctx)
 }

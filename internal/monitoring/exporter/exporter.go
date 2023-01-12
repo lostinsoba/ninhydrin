@@ -3,6 +3,7 @@ package exporter
 import (
 	"fmt"
 
+	"lostinsoba/ninhydrin/internal/model"
 	"lostinsoba/ninhydrin/internal/monitoring/exporter/prometheus"
 )
 
@@ -12,7 +13,7 @@ type Exporter interface {
 	Start()
 }
 
-func NewExporter(kind string, settings map[string]string, labels map[string]string) (Exporter, error) {
+func NewExporter(kind string, settings model.Settings, labels map[string]string) (Exporter, error) {
 	switch kind {
 	case prometheus.Kind:
 		return prometheus.NewExporter(settings, labels)

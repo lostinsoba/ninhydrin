@@ -1,6 +1,7 @@
 package monitoring
 
 import (
+	"lostinsoba/ninhydrin/internal/model"
 	"lostinsoba/ninhydrin/internal/monitoring/exporter"
 	"lostinsoba/ninhydrin/internal/monitoring/logger"
 )
@@ -25,10 +26,10 @@ func NewMonitoring(service, version, gitCommit string) *Monitoring {
 	}
 }
 
-func (m *Monitoring) NewLogger(kind string, settings map[string]string) logger.Logger {
+func (m *Monitoring) NewLogger(kind string, settings model.Settings) logger.Logger {
 	return logger.NewLogger(kind, settings, m.labels)
 }
 
-func (m *Monitoring) NewExporter(kind string, settings map[string]string) (exporter.Exporter, error) {
+func (m *Monitoring) NewExporter(kind string, settings model.Settings) (exporter.Exporter, error) {
 	return exporter.NewExporter(kind, settings, m.labels)
 }

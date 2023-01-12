@@ -1,12 +1,10 @@
 package postgres
 
 import (
-	"fmt"
-	"strconv"
-	"time"
-
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
+
+	"lostinsoba/ninhydrin/internal/model"
 )
 
 const Kind = "postgres"
@@ -21,28 +19,19 @@ const (
 	settingConnMaxLifetime = "conn_max_lifetime"
 )
 
-func NewPostgres(settings map[string]string) (*Storage, error) {
-	connStr, ok := settings[settingConnStr]
-	if !ok {
-		return nil, fmt.Errorf("%s setting not present", settingMaxOpenConns)
-	}
-	maxOpenConnsRaw, ok := settings[settingMaxOpenConns]
-	if !ok {
-		return nil, fmt.Errorf("%s setting not present", settingMaxOpenConns)
-	}
-	maxOpenConns, err := strconv.Atoi(maxOpenConnsRaw)
+func NewPostgres(settings model.Settings) (*Storage, error) {
+	connStr, err := settings.ReadStr(settingConnStr)
 	if err != nil {
-		return nil, fmt.Errorf("%s value %s parsing failed: %s", settingMaxOpenConns, maxOpenConnsRaw, err)
+		return nil, err
 	}
-	connMaxLifetimeRaw, ok := settings[settingConnMaxLifetime]
-	if !ok {
-		return nil, fmt.Errorf("%s setting not present", settingConnMaxLifetime)
-	}
-	connMaxLifetime, err := time.ParseDuration(connMaxLifetimeRaw)
+	maxOpenConns, err := settings.ReadInt(settingMaxOpenConns)
 	if err != nil {
-		return nil, fmt.Errorf("%s value %s parsing failed: %s", settingConnMaxLifetime, connMaxLifetimeRaw, err)
+		return nil, err
 	}
-
+	connMaxLifetime, err := settings.ReadDuration(settingConnMaxLifetime)
+	if err != nil {
+		return nil, err
+	}
 	db, err := sqlx.Connect("postgres", connStr)
 	if err != nil {
 		return nil, err

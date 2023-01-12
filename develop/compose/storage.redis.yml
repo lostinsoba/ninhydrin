@@ -1,0 +1,9 @@
+version: "3"
+services:
+  ninhydrin-storage:
+    image: redis:7.0-alpine
+    command: redis-server
+    networks:
+      - ninhydrin
+    ports:
+      - "6379:6379"

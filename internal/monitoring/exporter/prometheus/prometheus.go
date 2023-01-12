@@ -1,8 +1,9 @@
 package prometheus
 
 import (
-	"fmt"
 	"net/http"
+
+	"lostinsoba/ninhydrin/internal/model"
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
@@ -19,18 +20,18 @@ type Exporter struct {
 	registry *registry
 }
 
-func NewExporter(settings map[string]string, labels map[string]string) (*Exporter, error) {
-	namespaceStr, ok := settings[settingNamespace]
-	if !ok {
-		return nil, fmt.Errorf("%s setting not present", settingNamespace)
+func NewExporter(settings model.Settings, labels map[string]string) (*Exporter, error) {
+	namespace, err := settings.ReadStr(settingNamespace)
+	if err != nil {
+		return nil, err
 	}
-	listenStr, ok := settings[settingListen]
-	if !ok {
-		return nil, fmt.Errorf("%s setting not present", settingListen)
+	listen, err := settings.ReadStr(settingListen)
+	if err != nil {
+		return nil, err
 	}
 	return &Exporter{
-		addr:     listenStr,
-		registry: newRegistry(namespaceStr, labels),
+		addr:     listen,
+		registry: newRegistry(namespace, labels),
 	}, nil
 }
 

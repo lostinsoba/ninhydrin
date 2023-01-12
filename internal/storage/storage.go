@@ -6,6 +6,7 @@ import (
 
 	"lostinsoba/ninhydrin/internal/model"
 	"lostinsoba/ninhydrin/internal/storage/postgres"
+	"lostinsoba/ninhydrin/internal/storage/redis"
 )
 
 type Storage interface {
@@ -21,14 +22,18 @@ type Storage interface {
 	ListTasks(ctx context.Context, namespaceID string) (tasks []*model.Task, err error)
 
 	CaptureTasks(ctx context.Context, namespaceID string, limit int) (tasks []*model.Task, err error)
-	ReleaseTaskIDs(ctx context.Context, taskIDs []string, status model.TaskStatus) error
-	RefreshTaskIDs(ctx context.Context) (tasksUpdated int64, err error)
+	ReleaseTasks(ctx context.Context, taskIDs []string, status model.TaskStatus) error
+	RefreshTaskStatuses(ctx context.Context) (tasksUpdated int64, err error)
 }
 
-func NewStorage(kind string, settings map[string]string) (Storage, error) {
+func NewStorage(kind string, settings model.Settings) (Storage, error) {
 	switch kind {
 	case postgres.Kind:
 		return postgres.NewPostgres(settings)
+	case redis.Kind:
+		return redis.NewRedis(settings)
+	case redis.KindSentinel:
+		return redis.NewRedisSentinel(settings)
 	default:
 		return nil, fmt.Errorf("unknown storage kind: %s", kind)
 	}

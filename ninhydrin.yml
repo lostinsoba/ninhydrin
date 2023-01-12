@@ -3,11 +3,24 @@ api:
 scheduler:
   interval: 60s
 storage:
-  kind: postgres
+  # kind: postgres
+  # settings:
+  #   conn_str: postgres://ninhydrin:ninhydrin@ninhydrin-storage:5432/ninhydrin?sslmode=disable
+  #   conn_max_lifetime: 60s
+  #   max_open_conns: 5
+  kind: redis
   settings:
-    conn_str: postgres://ninhydrin:ninhydrin@ninhydrin-storage:5432/ninhydrin?sslmode=disable
-    conn_max_lifetime: 60s
-    max_open_conns: 5
+    addrs: ninhydrin-storage:6379
+    user: ninhydrin
+    password: ninhydrin
+    database: 0
+  # kind: redis.sentinel
+  # settings:
+  #   master: ninhydrin-storage-master
+  #   addrs: ninhydrin-storage-sentinel1:26379,ninhydrin-storage-sentinel2:26380,ninhydrin-storage-sentinel3:26381
+  #   user: ninhydrin
+  #   password: ninhydrin
+  #   database: 0
 monitoring:
   logger:
     kind: zap
