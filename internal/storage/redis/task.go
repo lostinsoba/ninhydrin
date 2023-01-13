@@ -3,19 +3,42 @@ package redis
 import (
 	"context"
 	"fmt"
+	r "github.com/go-redis/redis/v9"
 
 	"lostinsoba/ninhydrin/internal/model"
-	"lostinsoba/ninhydrin/internal/util"
 )
 
+const (
+	TaskScoreTimeout = iota
+	TaskScoreFailed
+	TaskScoreIdle
+	TaskScoreInProgress
+	TaskScoreDone
+)
+
+func toScore(status model.TaskStatus) float64 {
+	scoreMap := map[model.TaskStatus]int{
+		model.TaskStatusTimeout:    TaskScoreTimeout,
+		model.TaskStatusFailed:     TaskScoreFailed,
+		model.TaskStatusIdle:       TaskScoreIdle,
+		model.TaskStatusInProgress: TaskScoreInProgress,
+		model.TaskStatusDone:       TaskScoreDone,
+	}
+	return float64(scoreMap[status])
+}
+
 func (s *Storage) RegisterTask(ctx context.Context, task *model.Task) error {
+	data, err := encode(task)
+	if err != nil {
+		return err
+	}
 	pipe := s.client.TxPipeline()
-	pipe.SAdd(ctx, namespaceTaskKey(task.NamespaceID), task.ID)
-	pipe.SAdd(ctx, taskStatusKey(task.Status), task.ID)
-	pipe.Set(ctx, taskTimeoutKey(task.ID), task.Timeout, -1)
-	pipe.Set(ctx, taskRetriesLeftKey(task.ID), task.RetriesLeft, -1)
-	pipe.Set(ctx, taskUpdatedAtKey(task.ID), util.UnixEpoch(), -1)
-	_, err := pipe.Exec(ctx)
+	pipe.Set(ctx, taskKey(task.ID), data, -1)
+	pipe.ZAddNX(ctx, namespaceTaskKey(task.NamespaceID), r.Z{
+		Member: task.ID,
+		Score:  toScore(task.Status),
+	})
+	_, err = pipe.Exec(ctx)
 	return err
 }
 
@@ -24,7 +47,16 @@ func (s *Storage) DeregisterTask(ctx context.Context, taskID string) error {
 }
 
 func (s *Storage) ReadTask(ctx context.Context, taskID string) (task *model.Task, err error) {
-	return nil, err
+	cmd := s.client.Get(ctx, taskKey(taskID))
+	if cmd.Err() != nil {
+		return nil, err
+	}
+	data, err := cmd.Bytes()
+	if err != nil {
+		return nil, err
+	}
+	err = decode(data, &task)
+	return
 }
 
 func (s *Storage) CaptureTasks(ctx context.Context, namespaceID string, limit int) (tasks []*model.Task, err error) {
@@ -44,29 +76,14 @@ func (s *Storage) ListTasks(ctx context.Context, namespaceID string) (tasks []*m
 }
 
 const (
+	taskPrefix          = "task"
 	namespaceTaskPrefix = "namespace-task"
-	taskTimeoutPrefix   = "task-timeout"
-	taskRetriesLeft     = "task-retries-left"
-	taskUpdatedAt       = "task-updated-at"
-	taskStatusPrefix    = "task-status"
 )
+
+func taskKey(taskID string) string {
+	return fmt.Sprintf("%s:%s", taskPrefix, taskID)
+}
 
 func namespaceTaskKey(namespaceID string) string {
 	return fmt.Sprintf("%s:%s", namespaceTaskPrefix, namespaceID)
-}
-
-func taskStatusKey(status model.TaskStatus) string {
-	return fmt.Sprintf("%s:%s", taskStatusPrefix, status)
-}
-
-func taskTimeoutKey(taskID string) string {
-	return fmt.Sprintf("%s:%s", taskTimeoutPrefix, taskID)
-}
-
-func taskRetriesLeftKey(taskID string) string {
-	return fmt.Sprintf("%s:%s", taskRetriesLeft, taskID)
-}
-
-func taskUpdatedAtKey(taskID string) string {
-	return fmt.Sprintf("%s:%s", taskUpdatedAt, taskID)
 }

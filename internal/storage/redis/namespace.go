@@ -12,7 +12,7 @@ func (s *Storage) RegisterNamespace(ctx context.Context, namespace *model.Namesp
 }
 
 func (s *Storage) DeregisterNamespace(ctx context.Context, namespaceID string) error {
-	return s.client.SRem(ctx, namespaceKey(namespaceID)).Err()
+	return s.client.SRem(ctx, namespaceKey(namespaceID), namespaceID).Err()
 }
 
 func (s *Storage) CheckNamespaceExists(ctx context.Context, namespaceID string) (exists bool, err error) {

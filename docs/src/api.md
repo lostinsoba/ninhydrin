@@ -25,7 +25,7 @@ POST "v1/namespace"
 Content-Type: "application/json"
 
 {
-  "id": "Infra"
+  "id": "Infrastructure"
 }
 ```
 

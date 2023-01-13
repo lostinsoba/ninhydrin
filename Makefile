@@ -1,5 +1,5 @@
 # build docker images
-GO_VERSION := "1.16"
+GO_VERSION := "1.19"
 GIT_COMMIT := $(shell git log -1 --pretty=format:%h)
 
 go-version:

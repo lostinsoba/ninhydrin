@@ -11,8 +11,14 @@ git clone -b develop https://github.com/lostinsoba/ninhydrin
 ### <a name="installation-docker-compose"></a> Docker Compose
 
 ```
-make develop-compose
+make develop-compose arg=value [arg...]
 ```
+
+List of arguments:
+
+| Argument        | Description         | Values                                  |
+|-----------------|---------------------|-----------------------------------------|
+| DEVELOP_STORAGE | Storage kind to use | postgres, redis (redis, redis.sentinel) |
 
 ## <a name="debugging"></a> Debugging
 

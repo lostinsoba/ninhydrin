@@ -11,14 +11,12 @@ storage:
   kind: redis
   settings:
     addrs: ninhydrin-storage:6379
-    user: ninhydrin
     password: ninhydrin
     database: 0
   # kind: redis.sentinel
   # settings:
   #   master: ninhydrin-storage-master
   #   addrs: ninhydrin-storage-sentinel1:26379,ninhydrin-storage-sentinel2:26380,ninhydrin-storage-sentinel3:26381
-  #   user: ninhydrin
   #   password: ninhydrin
   #   database: 0
 monitoring:

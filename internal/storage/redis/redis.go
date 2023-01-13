@@ -1,6 +1,9 @@
 package redis
 
 import (
+	"bytes"
+	"encoding/gob"
+
 	r "github.com/go-redis/redis/v9"
 
 	"lostinsoba/ninhydrin/internal/model"
@@ -18,17 +21,12 @@ type Storage struct {
 const (
 	settingMasterName = "master"
 	settingAddrs      = "addrs"
-	settingUsername   = "user"
 	settingPassword   = "password"
 	settingDatabase   = "database"
 )
 
 func NewRedis(settings model.Settings) (*Storage, error) {
 	addr, err := settings.ReadStr(settingAddrs)
-	if err != nil {
-		return nil, err
-	}
-	username, err := settings.ReadStr(settingUsername)
 	if err != nil {
 		return nil, err
 	}
@@ -43,7 +41,6 @@ func NewRedis(settings model.Settings) (*Storage, error) {
 
 	options := &r.UniversalOptions{
 		Addrs:    []string{addr},
-		Username: username,
 		Password: password,
 		DB:       database,
 	}
@@ -60,10 +57,6 @@ func NewRedisSentinel(settings model.Settings) (*Storage, error) {
 	if err != nil {
 		return nil, err
 	}
-	username, err := settings.ReadStr(settingUsername)
-	if err != nil {
-		return nil, err
-	}
 	password, err := settings.ReadStr(settingPassword)
 	if err != nil {
 		return nil, err
@@ -76,10 +69,25 @@ func NewRedisSentinel(settings model.Settings) (*Storage, error) {
 	options := &r.UniversalOptions{
 		MasterName: masterName,
 		Addrs:      addrs,
-		Username:   username,
 		Password:   password,
 		DB:         database,
 	}
 
 	return &Storage{client: r.NewUniversalClient(options)}, nil
+}
+
+func encode(model any) ([]byte, error) {
+	var b bytes.Buffer
+	enc := gob.NewEncoder(&b)
+	err := enc.Encode(model)
+	if err != nil {
+		return nil, err
+	}
+	return b.Bytes(), nil
+}
+
+func decode(data []byte, model any) error {
+	b := bytes.NewBuffer(data)
+	dec := gob.NewDecoder(b)
+	return dec.Decode(model)
 }
