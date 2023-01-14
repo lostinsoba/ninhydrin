@@ -6,7 +6,7 @@ create table namespace
 alter table namespace add constraint namespace_unique_id unique (id);
 
 -- task
-create type task_status as enum ('idle', 'in_progress', 'timeout', 'failed', 'done');
+create type task_status as enum ('timeout', 'failed', 'idle', 'in_progress', 'done');
 create table task
 (
     id           text        not null,

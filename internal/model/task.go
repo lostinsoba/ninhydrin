@@ -1,17 +1,17 @@
 package model
 
 const (
-	TaskStatusIdle       TaskStatus = "idle"
-	TaskStatusInProgress TaskStatus = "in_progress"
 	TaskStatusTimeout    TaskStatus = "timeout"
 	TaskStatusFailed     TaskStatus = "failed"
+	TaskStatusIdle       TaskStatus = "idle"
+	TaskStatusInProgress TaskStatus = "in_progress"
 	TaskStatusDone       TaskStatus = "done"
 )
 
 func GetTaskCaptureStatuses() []string {
 	return []string{
-		string(TaskStatusIdle),
 		string(TaskStatusFailed),
+		string(TaskStatusIdle),
 	}
 }
 
@@ -27,10 +27,10 @@ func IsValidTaskStatus(status TaskStatus) bool {
 
 func getAllTaskStatuses() []TaskStatus {
 	return []TaskStatus{
-		TaskStatusIdle,
-		TaskStatusInProgress,
 		TaskStatusTimeout,
 		TaskStatusFailed,
+		TaskStatusIdle,
+		TaskStatusInProgress,
 		TaskStatusDone,
 	}
 }
