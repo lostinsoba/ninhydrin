@@ -2,49 +2,64 @@ package redis
 
 import (
 	"context"
-	"fmt"
-
 	"lostinsoba/ninhydrin/internal/model"
 )
 
+const (
+	setNamespace = "namespace"
+)
+
 func (s *Storage) RegisterNamespace(ctx context.Context, namespace *model.Namespace) error {
-	return s.client.SAdd(ctx, namespaceKey(namespace.ID), namespace.ID).Err()
+	res, err := s.client.SAdd(ctx, setNamespace, namespace.ID).Result()
+	if err != nil {
+		return err
+	}
+	if res == 0 {
+		return model.ErrAlreadyExist{}
+	}
+	return nil
 }
 
 func (s *Storage) DeregisterNamespace(ctx context.Context, namespaceID string) error {
-	return s.client.SRem(ctx, namespaceKey(namespaceID), namespaceID).Err()
+	// todo: try check rows affected in postgres and on conflict do nothing
+	res, err := s.client.SRem(ctx, setNamespace, namespaceID).Result()
+	if err != nil {
+		return err
+	}
+	if res == 0 {
+		return model.ErrNotFound{}
+	}
+	return nil
 }
 
 func (s *Storage) CheckNamespaceExists(ctx context.Context, namespaceID string) (exists bool, err error) {
-	res, err := s.client.Exists(ctx, namespaceKey(namespaceID)).Result()
-	exists = res == 1
-	return
+	return s.checkNamespaceExists(ctx, namespaceID)
 }
 
 func (s *Storage) ReadNamespace(ctx context.Context, namespaceID string) (namespace *model.Namespace, err error) {
-	res := s.client.Get(ctx, namespaceKey(namespaceID))
-	if res.Err() != nil {
-		return nil, res.Err()
+	exists, err := s.checkNamespaceExists(ctx, namespaceID)
+	if err != nil {
+		return nil, err
 	}
-	return &model.Namespace{ID: res.String()}, err
+	if !exists {
+		return nil, model.ErrNotFound{}
+	}
+	return &model.Namespace{ID: namespaceID}, err
+}
+
+func (s *Storage) checkNamespaceExists(ctx context.Context, namespaceID string) (bool, error) {
+	return s.client.SIsMember(ctx, setNamespace, namespaceID).Result()
 }
 
 func (s *Storage) ListNamespaces(ctx context.Context) (namespaces []*model.Namespace, err error) {
-	res := s.client.SMembers(ctx, namespacePrefix)
-	if res.Err() != nil {
-		return nil, res.Err()
+	cmd := s.client.SMembers(ctx, setNamespace)
+	res, err := cmd.Result()
+	if err != nil {
+		return nil, err
 	}
-	namespaces = make([]*model.Namespace, 0, len(res.Val()))
-	for _, val := range res.Val() {
+	namespaces = make([]*model.Namespace, 0, len(res))
+	for _, val := range res {
 		namespaces = append(namespaces, &model.Namespace{ID: val})
 	}
 	return
-}
-
-const (
-	namespacePrefix = "namespace"
-)
-
-func namespaceKey(namespaceID string) string {
-	return fmt.Sprintf("%s:%s", namespacePrefix, namespaceID)
 }

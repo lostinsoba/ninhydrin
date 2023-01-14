@@ -1,8 +1,9 @@
-ARG VERSION=""
 ARG GO_VERSION=""
-ARG GIT_COMMIT=""
 
 FROM golang:${GO_VERSION}-alpine as builder
+
+ARG VERSION=""
+ARG GIT_COMMIT=""
 
 RUN apk add --no-cache git
 
