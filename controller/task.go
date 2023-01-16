@@ -3,6 +3,10 @@ package controller
 import (
 	"context"
 	"fmt"
+	"sync"
+	"sync/atomic"
+
+	"github.com/lostinsoba/chain"
 
 	"lostinsoba/ninhydrin/internal/model"
 )
@@ -61,13 +65,67 @@ func (ctrl *Controller) CaptureTasks(ctx context.Context, namespaceID string, li
 	return ctrl.storage.CaptureTasks(ctx, namespaceID, limit)
 }
 
-func (ctrl *Controller) ReleaseTasks(ctx context.Context, taskIDs []string, status model.TaskStatus) error {
+func (ctrl *Controller) ReleaseTasks(ctx context.Context, namespaceID string, taskIDs []string, status model.TaskStatus) error {
 	if !model.IsValidTaskStatus(status) {
 		return fmt.Errorf("invalid status")
 	}
-	return ctrl.storage.ReleaseTasks(ctx, taskIDs, status)
+	return ctrl.storage.ReleaseTasks(ctx, namespaceID, taskIDs, status)
 }
 
 func (ctrl *Controller) RefreshTaskStatuses(ctx context.Context) (tasksUpdated int64, err error) {
-	return ctrl.storage.RefreshTaskStatuses(ctx)
+	namespaces, err := ctrl.ListNamespaces(ctx)
+	if err != nil {
+		return 0, err
+	}
+
+	errChan := make(chan error)
+	doneChan := make(chan bool)
+
+	var wg sync.WaitGroup
+	var c chain.Chain
+
+	c.SetStop(len(namespaces))
+	c.SetStep(4)
+
+	for c.Next() {
+		left, right := c.Bounds()
+		ns := namespaces[left:right]
+
+		wg.Add(1)
+		go func(wg *sync.WaitGroup, ctx context.Context, ns []*model.Namespace) {
+			nsTaskUpdated, refreshErr := ctrl.refreshTaskStatuses(ctx, ns)
+			if refreshErr != nil {
+				errChan <- refreshErr
+			} else {
+				atomic.AddInt64(&tasksUpdated, nsTaskUpdated)
+			}
+			wg.Done()
+		}(&wg, ctx, ns)
+	}
+
+	go func() {
+		wg.Wait()
+		close(doneChan)
+	}()
+
+	select {
+	case <-doneChan:
+		break
+	case err = <-errChan:
+		close(errChan)
+	}
+
+	return
+}
+
+func (ctrl *Controller) refreshTaskStatuses(ctx context.Context, namespaces []*model.Namespace) (int64, error) {
+	var tasksUpdatedTotal int64
+	for _, namespace := range namespaces {
+		tasksUpdated, err := ctrl.storage.RefreshTaskStatuses(ctx, namespace.ID)
+		if err != nil {
+			return 0, err
+		}
+		tasksUpdatedTotal += tasksUpdated
+	}
+	return tasksUpdatedTotal, nil
 }

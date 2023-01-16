@@ -40,8 +40,8 @@ type TaskStatus string
 type Task struct {
 	ID          string
 	NamespaceID string
-	Timeout     int64
 	RetriesLeft int
+	Timeout     int64
 	UpdatedAt   int64
 	Status      TaskStatus
 }

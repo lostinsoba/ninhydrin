@@ -11,8 +11,8 @@ create table task
 (
     id           text        not null,
     namespace_id text        not null,
+	retries_left smallint    not null,
     timeout      integer     not null,
-    retries_left smallint    not null,
     updated_at   bigint      not null,
     status       task_status not null
 );

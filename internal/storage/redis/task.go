@@ -3,10 +3,11 @@ package redis
 import (
 	"context"
 	"fmt"
+
 	r "github.com/go-redis/redis/v9"
-	"lostinsoba/ninhydrin/internal/util"
 
 	"lostinsoba/ninhydrin/internal/model"
+	"lostinsoba/ninhydrin/internal/util"
 )
 
 const (
@@ -29,11 +30,11 @@ func toScore(status model.TaskStatus) float64 {
 }
 
 const (
-	byteTask = "task"
+	bytesTask = "task"
 )
 
 func taskKey(taskID string) string {
-	return fmt.Sprintf("%s:%s", byteTask, taskID)
+	return fmt.Sprintf("%s:%s", bytesTask, taskID)
 }
 
 const (
@@ -116,23 +117,29 @@ func (s *Storage) CaptureTasks(ctx context.Context, namespaceID string, limit in
 	})
 	res, err := cmd.Result()
 	if err != nil {
-		return
+		return nil, err
 	}
 
 	captureTaskCmds := make(map[string]*r.IntCmd)
 
 	pipe := s.client.TxPipeline()
 	for _, taskID := range res {
-		newScore := r.Z{
-			Score:  TaskScoreInProgress,
-			Member: taskID,
+		newScore := r.ZAddArgs{
+			XX: true,
+			Ch: true,
+			Members: []r.Z{
+				{
+					Score:  TaskScoreInProgress,
+					Member: taskID,
+				},
+			},
 		}
-		captureTaskCmd := pipe.ZAddXX(ctx, namespaceTaskKey(namespaceID), newScore)
+		captureTaskCmd := pipe.ZAddArgs(ctx, namespaceTaskKey(namespaceID), newScore)
 		captureTaskCmds[taskID] = captureTaskCmd
 	}
 	_, err = pipe.Exec(ctx)
 	if err != nil {
-		return
+		return nil, err
 	}
 
 	taskIDs := make([]string, 0, len(captureTaskCmds))
@@ -144,7 +151,7 @@ func (s *Storage) CaptureTasks(ctx context.Context, namespaceID string, limit in
 
 	tasks, err = s.listTasks(ctx, taskIDs...)
 	if err != nil {
-		return
+		return nil, err
 	}
 
 	for _, task := range tasks {
@@ -154,10 +161,10 @@ func (s *Storage) CaptureTasks(ctx context.Context, namespaceID string, limit in
 	}
 	err = s.updateTasks(ctx, tasks...)
 	if err != nil {
-		return
+		return nil, err
 	}
 
-	return nil, err
+	return tasks, err
 }
 
 func (s *Storage) updateTasks(ctx context.Context, tasks ...*model.Task) error {
@@ -171,14 +178,9 @@ func (s *Storage) updateTasks(ctx context.Context, tasks ...*model.Task) error {
 	}
 
 	pipe := s.client.TxPipeline()
-
 	for _, task := range tasks {
 		data := encoded[task.ID]
 		pipe.Set(ctx, taskKey(task.ID), data, -1)
-		pipe.ZAddXX(ctx, namespaceTaskKey(task.NamespaceID), r.Z{
-			Member: task.ID,
-			Score:  toScore(task.Status),
-		})
 	}
 	_, err := pipe.Exec(ctx)
 	return err
@@ -192,11 +194,67 @@ func isCaptured(captureTaskCmd *r.IntCmd) bool {
 	return affected > 0
 }
 
-func (s *Storage) ReleaseTasks(ctx context.Context, taskIDs []string, status model.TaskStatus) error {
+func (s *Storage) ReleaseTasks(ctx context.Context, namespaceID string, taskIDs []string, status model.TaskStatus) error {
+	members := make([]r.Z, 0, len(taskIDs))
+	for _, taskID := range taskIDs {
+		members = append(members, r.Z{
+			Score:  toScore(status),
+			Member: taskID,
+		})
+	}
+	newScore := r.ZAddArgs{
+		XX:      true,
+		Members: members,
+	}
+	cmd := s.client.ZAddArgs(ctx, namespaceTaskKey(namespaceID), newScore)
+	_, err := cmd.Result()
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
-func (s *Storage) RefreshTaskStatuses(ctx context.Context) (tasksUpdated int64, err error) {
+func (s *Storage) RefreshTaskStatuses(ctx context.Context, namespaceID string) (tasksUpdated int64, err error) {
+	cmd := s.client.ZRangeArgs(ctx, r.ZRangeArgs{
+		Key:     namespaceTaskKey(namespaceID),
+		Start:   TaskScoreInProgress,
+		Stop:    TaskScoreInProgress,
+		ByScore: true,
+	})
+	res, err := cmd.Result()
+	if err != nil {
+		return 0, err
+	}
+
+	captureTaskCmds := make(map[string]*r.IntCmd)
+
+	members := make([]r.Z, 0, len(res))
+	for _, taskID := range res {
+		members = append(members, r.Z{
+			Score:  0,
+			Member: nil,
+		})
+	}
+
+	pipe := s.client.TxPipeline()
+	for _, taskID := range res {
+		newScore := r.ZAddArgs{
+			XX: true,
+			Ch: true,
+			Members: []r.Z{
+				{
+					Score:  TaskScoreInProgress,
+					Member: taskID,
+				},
+			},
+		}
+		captureTaskCmd := pipe.ZAddArgs(ctx, namespaceTaskKey(namespaceID), newScore)
+		captureTaskCmds[taskID] = captureTaskCmd
+	}
+	_, err = pipe.Exec(ctx)
+	if err != nil {
+		return nil, err
+	}
 	return 0, nil
 }
 

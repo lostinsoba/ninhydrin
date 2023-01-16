@@ -10,8 +10,8 @@ import (
 type TaskData struct {
 	ID          string `json:"id"`
 	NamespaceID string `json:"namespace_id"`
-	Timeout     int64  `json:"timeout,omitempty"`
 	RetriesLeft int    `json:"retries_left,omitempty"`
+	Timeout     int64  `json:"timeout,omitempty"`
 	UpdatedAt   int64  `json:"updated_at,omitempty"`
 	Status      string `json:"status,omitempty"`
 }
@@ -21,11 +21,11 @@ func (*TaskData) Render(w http.ResponseWriter, r *http.Request) error {
 }
 
 func (taskData *TaskData) Bind(r *http.Request) error {
-	if taskData.NamespaceID == "" {
-		return fmt.Errorf("namespace_id required")
-	}
 	if taskData.ID == "" {
 		return fmt.Errorf("id required")
+	}
+	if taskData.NamespaceID == "" {
+		return fmt.Errorf("namespace_id required")
 	}
 	return nil
 }
@@ -34,8 +34,8 @@ func (taskData *TaskData) ToModel() *model.Task {
 	return &model.Task{
 		ID:          taskData.ID,
 		NamespaceID: taskData.NamespaceID,
-		Timeout:     taskData.Timeout,
 		RetriesLeft: taskData.RetriesLeft,
+		Timeout:     taskData.Timeout,
 		UpdatedAt:   taskData.UpdatedAt,
 		Status:      ToTaskStatus(taskData.Status),
 	}
@@ -45,8 +45,8 @@ func ToTaskData(task *model.Task) *TaskData {
 	return &TaskData{
 		ID:          task.ID,
 		NamespaceID: task.NamespaceID,
-		Timeout:     task.Timeout,
 		RetriesLeft: task.RetriesLeft,
+		Timeout:     task.Timeout,
 		UpdatedAt:   task.UpdatedAt,
 		Status:      string(task.Status),
 	}
@@ -69,16 +69,20 @@ func (*TaskListData) Render(w http.ResponseWriter, r *http.Request) error {
 }
 
 type ReleaseData struct {
-	Status  string   `json:"status"`
-	TaskIDs []string `json:"task_ids"`
+	NamespaceID string   `json:"namespace_id"`
+	TaskIDs     []string `json:"task_ids"`
+	Status      string   `json:"status"`
 }
 
 func (releaseData *ReleaseData) Bind(r *http.Request) error {
-	if releaseData.Status == "" {
-		return fmt.Errorf("status required")
+	if releaseData.NamespaceID == "" {
+		return fmt.Errorf("namespace_id required")
 	}
 	if len(releaseData.TaskIDs) == 0 {
 		return fmt.Errorf("task_ids required")
+	}
+	if releaseData.Status == "" {
+		return fmt.Errorf("status required")
 	}
 	return nil
 }

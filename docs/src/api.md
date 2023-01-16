@@ -63,24 +63,24 @@ GET "v1/task?namespace_id={namespaceID}"
 		{
 			"id": "Backup_Test_Shards11-21",
 			"namespace_id": "Infrastructure",
+      "retries_left": 4,
 			"timeout": 360,
-			"retries_left": 4,
 			"updated_at": 1673362943,
 			"status": "idle"
 		},
 		{
 			"id": "Backup_Test_Shards1-10",
 			"namespace_id": "Infrastructure",
+      "retries_left": 3,
 			"timeout": 360,
-			"retries_left": 3,
 			"updated_at": 1673362984,
 			"status": "failed"
 		},
 		{
 			"id": "Backup_Test_Shards22-32",
 			"namespace_id": "Infrastructure",
+      "retries_left": 4,
 			"timeout": 360,
-			"retries_left": 4,
 			"updated_at": 1673363000,
 			"status": "done"
 		}
@@ -97,8 +97,8 @@ Content-Type: "application/json"
 {
   "id": "Backup_Test_Shards1-10",
   "namespace_id": "Infrastructure",
-  "timeout": 360,
   "retries_left": 5,
+  "timeout": 360,
   "status": "idle"
 }
 ```
@@ -107,8 +107,8 @@ Content-Type: "application/json"
 |--------------|----------------------| ------- | -------- |
 | id           | Task ID              | String  | True     |
 | namespace_id | Namespace ID         | String  | True     |
-| timeout      | Timeout (in seconds) | Integer | False    |
 | retries_left | Retries left         | Integer | False    |
+| timeout      | Timeout (in seconds) | Integer | False    |
 | status       | Status               | String  | False    |
 
 #### Read registered task
@@ -121,8 +121,8 @@ GET "v1/task/{taskID}"
 {
 	"id": "Backup_Test_Shards1-10",
 	"namespace_id": "Infrastructure",
+  "retries_left": 3,
 	"timeout": 360,
-	"retries_left": 3,
 	"updated_at": 1673362984,
 	"status": "failed"
 }
@@ -148,16 +148,16 @@ GET "v1/task/capture?namespace_id={namespaceID}&limit={maxNumberOfTasks}"
 		{
 			"id": "Backup_Test_Shards22-32",
 			"namespace_id": "Infrastructure",
+      "retries_left": 4,
 			"timeout": 360,
-			"retries_left": 4,
 			"updated_at": 1673362954,
 			"status": "in_progress"
 		},
 		{
 			"id": "Backup_Test_Shards1-10",
 			"namespace_id": "Infrastructure",
+      "retries_left": 3,
 			"timeout": 360,
-			"retries_left": 3,
 			"updated_at": 1673362954,
 			"status": "in_progress"
 		}
@@ -172,12 +172,14 @@ PUT "v1/task/release"
 Content-Type: "application/json"
 
 {
-  "status": "done",
-  "task_ids": ["Backup_Test_Shards1-10"]
+  "namespace_id": "Infrastructure",
+  "task_ids": ["Backup_Test_Shards1-10"],
+  "status": "done"
 }
 ```
 
-| Parameter | Description      | Type            | Required |
-| --------- | ---------------- | --------------- | -------- |
-| status    | Status           | String          | True     |
-| task_ids  | List of task IDs | List of strings | True     |
+| Parameter    | Description      | Type            | Required |
+|--------------|------------------|-----------------| -------- |
+| namespace_id | Namespace ID     | String          | True     |
+| task_ids     | List of task IDs | List of strings | True     |
+| status       | Status           | String          | True     |
