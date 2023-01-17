@@ -11,7 +11,7 @@ import (
 
 func (s *Storage) RegisterTask(ctx context.Context, task *model.Task) error {
 	var query = `insert into task (id, namespace_id, retries_left, timeout, updated_at, status) values ($1, $2, $3, $4, $5, $6)`
-	_, err := s.db.ExecContext(ctx, query, task.ID, task.NamespaceID, task.RetriesLeft, task.Timeout, util.UnixEpoch(), string(task.Status))
+	_, err := s.db.ExecContext(ctx, query, task.ID, task.NamespaceID, task.RetriesLeft, task.Timeout, task.UpdatedAt, string(task.Status))
 	if isAlreadyExist(err) {
 		return model.ErrAlreadyExist{}
 	}

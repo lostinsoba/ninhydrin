@@ -3,6 +3,7 @@ package controller
 import (
 	"context"
 	"fmt"
+	"lostinsoba/ninhydrin/internal/util"
 	"sync"
 	"sync/atomic"
 
@@ -31,6 +32,7 @@ func (ctrl *Controller) RegisterTask(ctx context.Context, task *model.Task) erro
 	if task.Timeout == 0 {
 		task.Timeout = defaultTaskTimeout
 	}
+	task.UpdatedAt = util.UnixEpoch()
 	exists, err := ctrl.storage.CheckNamespaceExists(ctx, task.NamespaceID)
 	if err != nil {
 		return fmt.Errorf("failed to check namespace %s existence: %w", task.NamespaceID, err)

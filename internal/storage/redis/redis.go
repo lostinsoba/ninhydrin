@@ -1,9 +1,6 @@
 package redis
 
 import (
-	"bytes"
-	"encoding/gob"
-
 	r "github.com/go-redis/redis/v9"
 
 	"lostinsoba/ninhydrin/internal/model"
@@ -74,20 +71,4 @@ func NewRedisSentinel(settings model.Settings) (*Storage, error) {
 	}
 
 	return &Storage{client: r.NewUniversalClient(options)}, nil
-}
-
-func encode(model any) ([]byte, error) {
-	var b bytes.Buffer
-	enc := gob.NewEncoder(&b)
-	err := enc.Encode(model)
-	if err != nil {
-		return nil, err
-	}
-	return b.Bytes(), nil
-}
-
-func decode(data []byte, model any) error {
-	b := bytes.NewBuffer(data)
-	dec := gob.NewDecoder(b)
-	return dec.Decode(model)
 }
