@@ -2,53 +2,13 @@ package redis
 
 import (
 	"context"
-	"fmt"
-	"strconv"
 
 	r "github.com/go-redis/redis/v9"
 
 	"lostinsoba/ninhydrin/internal/model"
+	"lostinsoba/ninhydrin/internal/storage/redis/schema"
 	"lostinsoba/ninhydrin/internal/util"
 )
-
-const (
-	TaskScoreTimeout = iota
-	TaskScoreFailed
-	TaskScoreIdle
-	TaskScoreInProgress
-	TaskScoreDone
-)
-
-func toScore(status model.TaskStatus) float64 {
-	scoreMap := map[model.TaskStatus]int{
-		model.TaskStatusTimeout:    TaskScoreTimeout,
-		model.TaskStatusFailed:     TaskScoreFailed,
-		model.TaskStatusIdle:       TaskScoreIdle,
-		model.TaskStatusInProgress: TaskScoreInProgress,
-		model.TaskStatusDone:       TaskScoreDone,
-	}
-	return float64(scoreMap[status])
-}
-
-func fromScore(score float64) model.TaskStatus {
-	statuses := []model.TaskStatus{
-		model.TaskStatusTimeout,
-		model.TaskStatusFailed,
-		model.TaskStatusIdle,
-		model.TaskStatusInProgress,
-		model.TaskStatusDone,
-	}
-	ind := int(score)
-	return statuses[ind]
-}
-
-const (
-	sortedSetNamespaceTask = "namespace-task"
-)
-
-func namespaceTaskKey(namespaceID string) string {
-	return fmt.Sprintf("%s:%s", sortedSetNamespaceTask, namespaceID)
-}
 
 func (s *Storage) RegisterTask(ctx context.Context, task *model.Task) error {
 	exists, err := s.checkTaskExists(ctx, task.ID)
@@ -58,19 +18,48 @@ func (s *Storage) RegisterTask(ctx context.Context, task *model.Task) error {
 	if exists {
 		return model.ErrAlreadyExist{}
 	}
+	return s.registerTask(ctx, task)
+}
+
+func (s *Storage) registerTask(ctx context.Context, task *model.Task) error {
+	taskData := schema.ToTaskData(task)
+	data, err := schema.Encode(taskData)
+	if err != nil {
+		return err
+	}
 
 	pipe := s.client.TxPipeline()
-	pipe.HSet(ctx, "task", task.ID, true)
-	pipe.HSet(ctx, "task-namespace", task.ID, task.NamespaceID)
-	pipe.HSet(ctx, "task-retries-left", task.ID, task.RetriesLeft)
-	pipe.HSet(ctx, "task-timeout", task.ID, task.Timeout)
-	pipe.HSet(ctx, "task-updated-at", task.ID, task.UpdatedAt)
-	pipe.ZAddNX(ctx, namespaceTaskKey(task.NamespaceID), r.Z{
+	pipe.HSet(ctx, "task", task.ID, data)
+	pipe.ZAddNX(ctx, schema.NamespaceTaskKey(task.NamespaceID), r.Z{
 		Member: task.ID,
-		Score:  toScore(task.Status),
+		Score:  schema.StatusToScore(task.Status),
 	})
 	_, err = pipe.Exec(ctx)
 	return err
+}
+
+func (s *Storage) DeregisterTask(ctx context.Context, taskID string) error {
+	namespaceID, err := s.getTaskNamespaceID(ctx, taskID)
+	if err != nil {
+		return err
+	}
+	return s.deregisterTask(ctx, namespaceID, taskID)
+}
+
+func (s *Storage) deregisterTask(ctx context.Context, namespaceID, taskID string) error {
+	pipe := s.client.TxPipeline()
+	pipe.HDel(ctx, "task", taskID)
+	pipe.ZRem(ctx, schema.NamespaceTaskKey(namespaceID))
+	_, err := pipe.Exec(ctx)
+	return err
+}
+
+func (s *Storage) ReadTask(ctx context.Context, taskID string) (*model.Task, error) {
+	namespaceID, err := s.getTaskNamespaceID(ctx, taskID)
+	if err != nil {
+		return nil, err
+	}
+	return s.readTask(ctx, namespaceID, taskID)
 }
 
 func (s *Storage) checkTaskExists(ctx context.Context, taskID string) (bool, error) {
@@ -82,395 +71,186 @@ func (s *Storage) checkTaskExists(ctx context.Context, taskID string) (bool, err
 	return exists, nil
 }
 
-func (s *Storage) DeregisterTask(ctx context.Context, taskID string) error {
-	cmd := s.client.HGet(ctx, "task-namespace", taskID)
-	namespaceID, err := cmd.Result()
-	if err != nil {
-		return err
-	}
-
-	pipe := s.client.TxPipeline()
-	pipe.HSet(ctx, "task", taskID)
-	pipe.HSet(ctx, "task-namespace", taskID)
-	pipe.HSet(ctx, "task-retries-left", taskID)
-	pipe.HSet(ctx, "task-timeout", taskID)
-	pipe.HSet(ctx, "task-updated-at", taskID)
-	pipe.ZRem(ctx, namespaceTaskKey(namespaceID))
-	_, err = pipe.Exec(ctx)
-	return err
-}
-
-func (s *Storage) ReadTask(ctx context.Context, taskID string) (*model.Task, error) {
-	cmd := s.client.HGet(ctx, "task-namespace", taskID)
-	namespaceID, err := cmd.Result()
-	if err != nil {
-		return nil, err
-	}
-
+func (s *Storage) readTask(ctx context.Context, namespaceID, taskID string) (*model.Task, error) {
 	pipe := s.client.TxPipeline()
 	var (
-		retriesLeftCmd = pipe.HGet(ctx, "task-retries-left", taskID)
-		timeoutCmd     = pipe.HGet(ctx, "task-timeout", taskID)
-		updatedAtCmd   = pipe.HGet(ctx, "task-updated-at", taskID)
-		scoreCmd       = pipe.ZScore(ctx, namespaceTaskKey(namespaceID), taskID)
+		taskCmd  = pipe.HGet(ctx, "task", taskID)
+		scoreCmd = pipe.ZScore(ctx, schema.NamespaceTaskKey(namespaceID), taskID)
 	)
-	_, err = pipe.Exec(ctx)
+	_, err := pipe.Exec(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	var (
-		retriesLeft int
-		timeout     int64
-		updatedAt   int64
-		score       float64
-	)
-	retriesLeft, err = retriesLeftCmd.Int()
+	data, err := taskCmd.Bytes()
 	if err != nil {
 		return nil, err
 	}
-	timeout, err = timeoutCmd.Int64()
-	if err != nil {
-		return nil, err
-	}
-	updatedAt, err = updatedAtCmd.Int64()
-	if err != nil {
-		return nil, err
-	}
-	score, err = scoreCmd.Result()
+	var taskData *schema.TaskData
+	err = schema.Decode(data, &taskData)
 	if err != nil {
 		return nil, err
 	}
 
-	return &model.Task{
-		ID:          taskID,
-		NamespaceID: namespaceID,
-		RetriesLeft: retriesLeft,
-		Timeout:     timeout,
-		UpdatedAt:   updatedAt,
-		Status:      fromScore(score),
-	}, nil
+	score, err := scoreCmd.Result()
+	if err != nil {
+		return nil, err
+	}
+	return taskData.ToTask(namespaceID, score), nil
 }
 
 func (s *Storage) CaptureTasks(ctx context.Context, namespaceID string, limit int) ([]*model.Task, error) {
-	cmd := s.client.ZRangeArgs(ctx, r.ZRangeArgs{
-		Key:     namespaceTaskKey(namespaceID),
-		Start:   TaskScoreFailed,
-		Stop:    TaskScoreIdle,
-		ByScore: true,
-		Count:   int64(limit),
-	})
-	res, err := cmd.Result()
+	tasks, err := s.listTasks(ctx, namespaceID, schema.TaskScoreFailed, schema.TaskScoreIdle)
 	if err != nil {
 		return nil, err
 	}
 
-	captureTaskCmds := make(map[string]*r.IntCmd)
+	capturedIDs := make(map[string]bool)
+	for _, task := range tasks {
+		task.Status = model.TaskStatusInProgress
+		capturedIDs[task.ID] = false
+	}
 
-	capturePipe := s.client.TxPipeline()
-	for _, taskID := range res {
+	capturedTaskIDs, err := s.updateTasks(ctx, tasks)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, capturedID := range capturedTaskIDs {
+		capturedIDs[capturedID] = true
+	}
+
+	// todo: lookup for deletion from slice
+	capturedTasks := make([]*model.Task, 0, len(capturedTaskIDs))
+	for _, task := range tasks {
+		_, isCaptured := capturedIDs[task.ID]
+		if isCaptured {
+			capturedTasks = append(capturedTasks, task)
+		}
+	}
+
+	return capturedTasks, nil
+}
+
+func (s *Storage) ReleaseTasks(ctx context.Context, namespaceID string, taskIDs []string, status model.TaskStatus) error {
+
+	return nil
+}
+
+func (s *Storage) RefreshTaskStatuses(ctx context.Context, namespaceID string) (int64, error) {
+	tasks, err := s.listTasks(ctx, namespaceID, schema.TaskScoreInProgress, schema.TaskScoreInProgress)
+	if err != nil {
+		return 0, err
+	}
+
+	ts := util.UnixEpoch()
+	for _, task := range tasks {
+		if ts > task.UpdatedAt+task.Timeout {
+			task.RetriesLeft = task.RetriesLeft - 1
+			task.Status = model.TaskStatusTimeout
+		}
+	}
+
+	tasksUpdated, err := s.updateTasks(ctx, tasks)
+	if err != nil {
+		return 0, err
+	}
+	return int64(len(tasksUpdated)), nil
+}
+
+func (s *Storage) ListTasks(ctx context.Context, namespaceID string) ([]*model.Task, error) {
+	return s.listTasks(ctx, namespaceID, schema.TaskScoreTimeout, schema.TaskScoreDone)
+}
+
+func (s *Storage) listTasks(ctx context.Context, namespaceID string, fromScore, toScore int) ([]*model.Task, error) {
+	taskIDsWithScoresCmd := s.client.ZRangeArgsWithScores(ctx, r.ZRangeArgs{
+		Key:     schema.NamespaceTaskKey(namespaceID),
+		Start:   fromScore,
+		Stop:    toScore,
+		ByScore: true,
+	})
+	taskIDsWithScores, err := taskIDsWithScoresCmd.Result()
+	if err != nil {
+		return nil, err
+	}
+
+	taskCmds := make([]*r.StringCmd, 0, len(taskIDsWithScores))
+
+	pipe := s.client.TxPipeline()
+	for _, taskIDWithScore := range taskIDsWithScores {
+		taskID, _ := taskIDWithScore.Member.(string)
+		taskCmds = append(taskCmds, pipe.HGet(ctx, "task", taskID))
+	}
+	_, err = pipe.Exec(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	tasks := make([]*model.Task, 0, len(taskIDsWithScores))
+
+	for taskCmdInd := range taskCmds {
+		data, err := taskCmds[taskCmdInd].Bytes()
+		if err != nil {
+			return nil, err
+		}
+		var taskData *schema.TaskData
+		err = schema.Decode(data, &taskData)
+		if err != nil {
+			return nil, err
+		}
+		tasks = append(tasks, taskData.ToTask(namespaceID, taskIDsWithScores[taskCmdInd].Score))
+	}
+
+	return tasks, nil
+}
+
+func (s *Storage) updateTasks(ctx context.Context, tasks []*model.Task) (tasksUpdated []string, err error) {
+	scoreMap := make(map[string]*r.IntCmd)
+
+	pipe := s.client.TxPipeline()
+
+	for _, task := range tasks {
+		taskData := schema.ToTaskData(task)
+		data, err := schema.Encode(taskData)
+		if err != nil {
+			return
+		}
+		pipe.HSet(ctx, "task", task.ID, data)
 		newScore := r.ZAddArgs{
 			XX: true,
 			Ch: true,
 			Members: []r.Z{
 				{
-					Score:  TaskScoreInProgress,
-					Member: taskID,
+					Score:  schema.StatusToScore(task.Status),
+					Member: task.ID,
 				},
 			},
 		}
-		captureTaskCmd := capturePipe.ZAddArgs(ctx, namespaceTaskKey(namespaceID), newScore)
-		captureTaskCmds[taskID] = captureTaskCmd
-	}
-	_, err = capturePipe.Exec(ctx)
-	if err != nil {
-		return nil, err
+		scoreCmd := pipe.ZAddArgs(ctx, schema.NamespaceTaskKey(task.ID), newScore)
+		scoreMap[task.ID] = scoreCmd
 	}
 
-	taskIDs := make([]string, 0, len(captureTaskCmds))
-	for taskID, captureTaskCmd := range captureTaskCmds {
-		if isCaptured(captureTaskCmd) {
-			taskIDs = append(taskIDs, taskID)
+	_, err = pipe.Exec(ctx)
+	if err != nil {
+		return
+	}
+
+	for taskID, scoreCmd := range scoreMap {
+		if isAffected(scoreCmd) {
+			tasksUpdated = append(tasksUpdated, taskID)
 		}
 	}
-
-	ts := util.UnixEpoch()
-
-	fields, err := s.readTaskFields(ctx, taskIDs...)
-	for retriesLeftInd := range fields.retriesLeft {
-		fields.retriesLeft[retriesLeftInd] = fields.retriesLeft[retriesLeftInd] - 1
-	}
-	for updatedAtInd := range fields.updatedAt {
-		fields.updatedAt[updatedAtInd] = ts
-	}
-
-	err = s.writeTaskFields(ctx, taskIDs, fields)
-	if err != nil {
-		return nil, err
-	}
-
-	tasks := make([]*model.Task, 0, len(taskIDs))
-	for taskIDInd := range taskIDs {
-		tasks = append(tasks, &model.Task{
-			ID:          taskIDs[taskIDInd],
-			NamespaceID: namespaceID,
-			RetriesLeft: fields.retriesLeft[taskIDInd],
-			Timeout:     fields.timeouts[taskIDInd],
-			UpdatedAt:   ts,
-			Status:      model.TaskStatusInProgress,
-		})
-	}
-	return tasks, nil
+	return
 }
 
-func isCaptured(captureTaskCmd *r.IntCmd) bool {
-	affected, err := captureTaskCmd.Result()
+func isAffected(scoreCmd *r.IntCmd) bool {
+	affected, err := scoreCmd.Result()
 	if err != nil {
 		return false
 	}
 	return affected > 0
 }
 
-func (s *Storage) ReleaseTasks(ctx context.Context, namespaceID string, taskIDs []string, status model.TaskStatus) error {
-	members := make([]r.Z, 0, len(taskIDs))
-	for _, taskID := range taskIDs {
-		members = append(members, r.Z{
-			Score:  toScore(status),
-			Member: taskID,
-		})
-	}
-	newScore := r.ZAddArgs{
-		XX:      true,
-		Members: members,
-	}
-	cmd := s.client.ZAddArgs(ctx, namespaceTaskKey(namespaceID), newScore)
-	_, err := cmd.Result()
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (s *Storage) RefreshTaskStatuses(ctx context.Context, namespaceID string) (int64, error) {
-	cmd := s.client.ZRangeArgs(ctx, r.ZRangeArgs{
-		Key:     namespaceTaskKey(namespaceID),
-		Start:   TaskScoreInProgress,
-		Stop:    TaskScoreInProgress,
-		ByScore: true,
-	})
-	taskIDs, err := cmd.Result()
-	if err != nil {
-		return 0, err
-	}
-
-	fields, err := s.readTaskFields(ctx, taskIDs...)
-	if err != nil {
-		return 0, err
-	}
-
-	taskIDsToRefresh := make([]string, 0)
-	retriesLeftToRefresh := make([]int, 0)
-	updatedAtToRefresh := make([]int64, 0)
-
-	ts := util.UnixEpoch()
-	for taskIDInd := range taskIDs {
-		var (
-			timeoutVal   = fields.timeouts[taskIDInd]
-			updatedAtVal = fields.updatedAt[taskIDInd]
-		)
-		if ts > updatedAtVal+timeoutVal {
-			taskIDsToRefresh = append(taskIDsToRefresh, taskIDs[taskIDInd])
-			retriesLeftToRefresh = append(retriesLeftToRefresh, fields.retriesLeft[taskIDInd]-1)
-			updatedAtToRefresh = append(updatedAtToRefresh, ts)
-		}
-	}
-
-	members := make([]r.Z, 0, len(taskIDs))
-	for _, taskID := range taskIDsToRefresh {
-		members = append(members, r.Z{
-			Score:  TaskScoreTimeout,
-			Member: taskID,
-		})
-	}
-
-	updateCmd := s.client.ZAddArgs(ctx, namespaceTaskKey(namespaceID), r.ZAddArgs{
-		XX:      true,
-		Ch:      true,
-		Members: members,
-	})
-	tasksUpdated, err := updateCmd.Result()
-	if err != nil {
-		return 0, err
-	}
-
-	newFields := &taskFields{
-		retriesLeft: retriesLeftToRefresh,
-		updatedAt:   updatedAtToRefresh,
-	}
-	err = s.writeTaskFields(ctx, taskIDsToRefresh, newFields)
-	if err != nil {
-		return 0, err
-	}
-
-	return tasksUpdated, nil
-}
-
-func (s *Storage) ListTasks(ctx context.Context, namespaceID string) ([]*model.Task, error) {
-	cmd := s.client.ZRangeWithScores(ctx, namespaceTaskKey(namespaceID), 0, -1)
-	res, err := cmd.Result()
-	if err != nil {
-		return nil, err
-	}
-
-	taskIDs := make([]string, 0, len(res))
-	taskScores := make([]float64, 0, len(res))
-	for _, item := range res {
-		taskID, ok := item.Member.(string)
-		if ok {
-			taskIDs = append(taskIDs, taskID)
-			taskScores = append(taskScores, item.Score)
-		}
-	}
-
-	fields, err := s.readTaskFields(ctx, taskIDs...)
-	if err != nil {
-		return nil, err
-	}
-
-	tasks := make([]*model.Task, 0, len(taskIDs))
-	for taskIDInd := range taskIDs {
-		tasks = append(tasks, &model.Task{
-			ID:          taskIDs[taskIDInd],
-			NamespaceID: namespaceID,
-			RetriesLeft: fields.retriesLeft[taskIDInd],
-			Timeout:     fields.timeouts[taskIDInd],
-			UpdatedAt:   fields.updatedAt[taskIDInd],
-			Status:      fromScore(taskScores[taskIDInd]),
-		})
-	}
-
-	return tasks, nil
-}
-
-type taskFields struct {
-	retriesLeft []int
-	timeouts    []int64
-	updatedAt   []int64
-}
-
-func (s *Storage) readTaskFields(ctx context.Context, taskIDs ...string) (*taskFields, error) {
-	pipe := s.client.TxPipeline()
-	var (
-		retriesLeftCmd = pipe.HMGet(ctx, "task-retries-left", taskIDs...)
-		timeoutCmd     = pipe.HMGet(ctx, "task-timeout", taskIDs...)
-		updatedAtCmd   = pipe.HMGet(ctx, "task-updated-at", taskIDs...)
-	)
-	_, err := pipe.Exec(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	retriesLeft := make([]int, 0, len(taskIDs))
-	retriesLeftRaw, err := retriesLeftCmd.Result()
-	if err != nil {
-		return nil, err
-	}
-	for _, item := range retriesLeftRaw {
-		var (
-			strval string
-			value  int
-		)
-		strval, _ = item.(string)
-		value, err = strconv.Atoi(strval)
-		if err != nil {
-			return nil, err
-		}
-		retriesLeft = append(retriesLeft, value)
-	}
-
-	timeouts := make([]int64, 0, len(taskIDs))
-	timeoutsRaw, err := timeoutCmd.Result()
-	if err != nil {
-		return nil, err
-	}
-	for _, item := range timeoutsRaw {
-		var (
-			strval string
-			value  int64
-		)
-		strval, _ = item.(string)
-		value, err = strconv.ParseInt(strval, 10, 64)
-		if err != nil {
-			return nil, err
-		}
-		timeouts = append(timeouts, value)
-	}
-
-	updatedAt := make([]int64, 0, len(taskIDs))
-	updatedAtRaw, err := updatedAtCmd.Result()
-	if err != nil {
-		return nil, err
-	}
-	for _, item := range updatedAtRaw {
-		var (
-			strval string
-			value  int64
-		)
-		strval, _ = item.(string)
-		value, err = strconv.ParseInt(strval, 10, 64)
-		if err != nil {
-			return nil, err
-		}
-		updatedAt = append(updatedAt, value)
-	}
-
-	return &taskFields{
-		retriesLeft: retriesLeft,
-		timeouts:    timeouts,
-		updatedAt:   updatedAt,
-	}, nil
-}
-
-func (s *Storage) writeTaskFields(ctx context.Context, taskIDs []string, fields *taskFields) error {
-	var (
-		eqRetriesLen   = len(taskIDs) == len(fields.retriesLeft)
-		eqTimeoutsLen  = len(taskIDs) == len(fields.timeouts)
-		eqUpdatedAtLen = len(taskIDs) == len(fields.updatedAt)
-	)
-
-	if !eqRetriesLen && !eqTimeoutsLen && !eqUpdatedAtLen {
-		return nil
-	}
-
-	pipe := s.client.TxPipeline()
-
-	if eqRetriesLen {
-		newRetriesLeft := make([]interface{}, 0, len(taskIDs))
-		for taskInd := range taskIDs {
-			newRetriesLeft = append(newRetriesLeft, taskIDs[taskInd])
-			newRetriesLeft = append(newRetriesLeft, fields.retriesLeft[taskInd])
-		}
-		pipe.HMSet(ctx, "task-retries-left", newRetriesLeft)
-	}
-
-	if eqTimeoutsLen {
-		newTimeouts := make([]interface{}, 0, len(taskIDs))
-		for taskInd := range taskIDs {
-			newTimeouts = append(newTimeouts, taskIDs[taskInd])
-			newTimeouts = append(newTimeouts, fields.timeouts[taskInd])
-		}
-		pipe.HMSet(ctx, "task-timeout", newTimeouts)
-	}
-
-	if eqUpdatedAtLen {
-		newUpdatedAt := make([]interface{}, 0, len(taskIDs))
-		for taskInd := range taskIDs {
-			newUpdatedAt = append(newUpdatedAt, taskIDs[taskInd])
-			newUpdatedAt = append(newUpdatedAt, fields.updatedAt[taskInd])
-		}
-		pipe.HMSet(ctx, "task-updated-at", newUpdatedAt)
-	}
-
-	_, err := pipe.Exec(ctx)
-	return err
+func (s *Storage) getTaskNamespaceID(ctx context.Context, taskID string) (string, error) {
+	return s.client.HGet(ctx, "task-namespace", taskID).Result()
 }

@@ -42,7 +42,9 @@ func NewRedis(settings model.Settings) (*Storage, error) {
 		DB:       database,
 	}
 
-	return &Storage{client: r.NewUniversalClient(options)}, nil
+	return &Storage{
+		client: r.NewUniversalClient(options),
+	}, nil
 }
 
 func NewRedisSentinel(settings model.Settings) (*Storage, error) {
@@ -70,5 +72,7 @@ func NewRedisSentinel(settings model.Settings) (*Storage, error) {
 		DB:         database,
 	}
 
-	return &Storage{client: r.NewUniversalClient(options)}, nil
+	return &Storage{
+		client: r.NewUniversalClient(options),
+	}, nil
 }

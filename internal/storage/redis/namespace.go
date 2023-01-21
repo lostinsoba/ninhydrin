@@ -2,15 +2,13 @@ package redis
 
 import (
 	"context"
-	"lostinsoba/ninhydrin/internal/model"
-)
 
-const (
-	setNamespace = "namespace"
+	"lostinsoba/ninhydrin/internal/model"
+	"lostinsoba/ninhydrin/internal/storage/redis/schema"
 )
 
 func (s *Storage) RegisterNamespace(ctx context.Context, namespace *model.Namespace) error {
-	res, err := s.client.SAdd(ctx, setNamespace, namespace.ID).Result()
+	res, err := s.client.SAdd(ctx, schema.NamespaceKey(), namespace.ID).Result()
 	if err != nil {
 		return err
 	}
@@ -22,7 +20,7 @@ func (s *Storage) RegisterNamespace(ctx context.Context, namespace *model.Namesp
 
 func (s *Storage) DeregisterNamespace(ctx context.Context, namespaceID string) error {
 	// todo: try check rows affected in postgres and on conflict do nothing
-	res, err := s.client.SRem(ctx, setNamespace, namespaceID).Result()
+	res, err := s.client.SRem(ctx, schema.NamespaceKey(), namespaceID).Result()
 	if err != nil {
 		return err
 	}
@@ -48,11 +46,11 @@ func (s *Storage) ReadNamespace(ctx context.Context, namespaceID string) (namesp
 }
 
 func (s *Storage) checkNamespaceExists(ctx context.Context, namespaceID string) (bool, error) {
-	return s.client.SIsMember(ctx, setNamespace, namespaceID).Result()
+	return s.client.SIsMember(ctx, schema.NamespaceKey(), namespaceID).Result()
 }
 
 func (s *Storage) ListNamespaces(ctx context.Context) (namespaces []*model.Namespace, err error) {
-	cmd := s.client.SMembers(ctx, setNamespace)
+	cmd := s.client.SMembers(ctx, schema.NamespaceKey())
 	res, err := cmd.Result()
 	if err != nil {
 		return nil, err
