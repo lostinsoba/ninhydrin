@@ -3,7 +3,6 @@ package controller
 import (
 	"context"
 	"fmt"
-	"lostinsoba/ninhydrin/internal/util"
 	"sync"
 	"sync/atomic"
 
@@ -19,20 +18,9 @@ const (
 )
 
 func (ctrl *Controller) RegisterTask(ctx context.Context, task *model.Task) error {
-	if task.Status == "" {
-		task.Status = defaultTaskStatus
-	} else {
-		if !model.IsValidTaskStatus(task.Status) {
-			return fmt.Errorf("invalid status")
-		}
-	}
-	if task.RetriesLeft == 0 {
-		task.RetriesLeft = defaultTaskRetries
-	}
 	if task.Timeout == 0 {
 		task.Timeout = defaultTaskTimeout
 	}
-	task.UpdatedAt = util.UnixEpoch()
 	exists, err := ctrl.storage.CheckNamespaceExists(ctx, task.NamespaceID)
 	if err != nil {
 		return fmt.Errorf("failed to check namespace %s existence: %w", task.NamespaceID, err)
@@ -61,17 +49,6 @@ func (ctrl *Controller) ReadTask(ctx context.Context, taskID string) (*model.Tas
 
 func (ctrl *Controller) ListTasks(ctx context.Context, namespaceID string) ([]*model.Task, error) {
 	return ctrl.storage.ListTasks(ctx, namespaceID)
-}
-
-func (ctrl *Controller) CaptureTasks(ctx context.Context, namespaceID string, limit int) ([]*model.Task, error) {
-	return ctrl.storage.CaptureTasks(ctx, namespaceID, limit)
-}
-
-func (ctrl *Controller) ReleaseTasks(ctx context.Context, namespaceID string, taskIDs []string, status model.TaskStatus) error {
-	if !model.IsValidTaskStatus(status) {
-		return fmt.Errorf("invalid status")
-	}
-	return ctrl.storage.ReleaseTasks(ctx, namespaceID, taskIDs, status)
 }
 
 func (ctrl *Controller) RefreshTaskStatuses(ctx context.Context) (tasksUpdated int64, err error) {

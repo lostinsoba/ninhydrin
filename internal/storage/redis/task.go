@@ -120,7 +120,6 @@ func (s *Storage) CaptureTasks(ctx context.Context, namespaceID string, limit in
 		capturedIDs[capturedID] = true
 	}
 
-	// todo: lookup for deletion from slice
 	capturedTasks := make([]*model.Task, 0, len(capturedTaskIDs))
 	for _, task := range tasks {
 		_, isCaptured := capturedIDs[task.ID]

@@ -17,6 +17,7 @@ func (r *Router) namespace(router chi.Router) {
 		router.Use(middleware.NamespaceID)
 		router.Get("/", r.readNamespace)
 		router.Delete("/", r.deregisterNamespace)
+		router.Get("/capture", r.captureTasks)
 	})
 }
 
@@ -85,4 +86,28 @@ func (r *Router) deregisterNamespace(writer http.ResponseWriter, request *http.R
 		return
 	}
 	render.Status(request, http.StatusOK)
+}
+
+func (r *Router) captureTasks(writer http.ResponseWriter, request *http.Request) {
+	namespaceID, err := middleware.GetNamespaceID(request)
+	if err != nil {
+		render.Render(writer, request, dto.InvalidRequestError(err))
+		return
+	}
+	limit, err := middleware.QueryGetTaskCaptureLimit(request)
+	if err != nil {
+		render.Render(writer, request, dto.InvalidRequestError(err))
+		return
+	}
+	list, err := r.ctrl.CaptureTasks(request.Context(), namespaceID, limit)
+	if err != nil {
+		render.Render(writer, request, dto.InternalServerError(err))
+		return
+	}
+	response := dto.ToTaskStateListData(list)
+	err = render.Render(writer, request, response)
+	if err != nil {
+		render.Render(writer, request, dto.InternalServerError(err))
+		return
+	}
 }

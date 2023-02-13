@@ -13,12 +13,14 @@ import (
 func (r *Router) task(router chi.Router) {
 	router.Get("/", r.listTasks)
 	router.Post("/", r.registerTask)
-	router.Get("/capture", r.captureTaskIDs)
-	router.Put("/release", r.releaseTasks)
 	router.Route("/{taskID}", func(router chi.Router) {
 		router.Use(middleware.TaskID)
 		router.Get("/", r.readTask)
 		router.Delete("/", r.deregisterTask)
+		router.Route("/state", func(router chi.Router) {
+			router.Get("/", r.readTaskState)
+			router.Put("/", r.updateTaskState)
+		})
 	})
 }
 
@@ -94,23 +96,18 @@ func (r *Router) deregisterTask(writer http.ResponseWriter, request *http.Reques
 	render.Status(request, http.StatusOK)
 }
 
-func (r *Router) captureTaskIDs(writer http.ResponseWriter, request *http.Request) {
-	namespaceID, err := middleware.QueryGetNamespaceID(request)
+func (r *Router) readTaskState(writer http.ResponseWriter, request *http.Request) {
+	taskID, err := middleware.GetTaskID(request)
 	if err != nil {
 		render.Render(writer, request, dto.InvalidRequestError(err))
 		return
 	}
-	limit, err := middleware.QueryGetTaskCaptureLimit(request)
-	if err != nil {
-		render.Render(writer, request, dto.InvalidRequestError(err))
-		return
-	}
-	list, err := r.ctrl.CaptureTasks(request.Context(), namespaceID, limit)
+	taskState, err := r.ctrl.ReadTaskState(request.Context(), taskID)
 	if err != nil {
 		render.Render(writer, request, dto.InternalServerError(err))
 		return
 	}
-	response := dto.ToTaskListData(list)
+	response := dto.ToTaskStateData(taskState)
 	err = render.Render(writer, request, response)
 	if err != nil {
 		render.Render(writer, request, dto.InternalServerError(err))
@@ -118,14 +115,14 @@ func (r *Router) captureTaskIDs(writer http.ResponseWriter, request *http.Reques
 	}
 }
 
-func (r *Router) releaseTasks(writer http.ResponseWriter, request *http.Request) {
-	release := dto.ReleaseData{}
-	err := render.Bind(request, &release)
+func (r *Router) updateTaskState(writer http.ResponseWriter, request *http.Request) {
+	taskState := dto.TaskStateData{}
+	err := render.Bind(request, &taskState)
 	if err != nil {
 		render.Render(writer, request, dto.InvalidRequestError(err))
 		return
 	}
-	err = r.ctrl.ReleaseTasks(request.Context(), release.NamespaceID, release.TaskIDs, dto.ToTaskStatus(release.Status))
+	err = r.ctrl.UpdateTaskState(request.Context(), taskState.ToModel())
 	if err != nil {
 		render.Render(writer, request, dto.InternalServerError(err))
 		return

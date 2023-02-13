@@ -21,9 +21,10 @@ type Storage interface {
 	ReadTask(ctx context.Context, taskID string) (task *model.Task, err error)
 	ListTasks(ctx context.Context, namespaceID string) (tasks []*model.Task, err error)
 
-	CaptureTasks(ctx context.Context, namespaceID string, limit int) (tasks []*model.Task, err error)
-	ReleaseTasks(ctx context.Context, namespaceID string, taskIDs []string, status model.TaskStatus) error
-	RefreshTaskStatuses(ctx context.Context, namespaceID string) (tasksUpdated int64, err error)
+	CaptureTasks(ctx context.Context, namespaceID string, limit int) (taskStates []*model.TaskState, err error)
+
+	ReadTaskState(ctx context.Context, taskID string) (taskState *model.TaskState, err error)
+	UpdateTaskState(ctx context.Context, taskState *model.TaskState) error
 }
 
 func NewStorage(kind string, settings model.Settings) (Storage, error) {
